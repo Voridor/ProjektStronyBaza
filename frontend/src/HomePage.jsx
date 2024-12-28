@@ -10,8 +10,9 @@ import {MyNavbar} from './MyNavbar.jsx'
 export function HomePage() {
   // lista zdjec do slidera
   const images = [
-    'https://mdbootstrap.com/img/Photos/Slides/img%20(35).jpg',
-    'https://mdbootstrap.com/img/Photos/Slides/img%20(33).jpg',
+    'img/banner-books.jpg',
+    'img/book-wall.jpg',
+    'img/bookandglasses.jpg'
   ];
 
   return (

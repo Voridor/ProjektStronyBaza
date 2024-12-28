@@ -24,7 +24,7 @@ export function MyNavbar(){
         <>
 
         {/* prziciski logowanie, rejestracja, koszyk nad paskiem nawigacyjnym */}
-        <div className="d-flex flex-row justify-content-end bg-dark px-4 pt-4">
+        <div className="d-flex flex-row justify-content-end bg-dark px-4 pt-3">
             {/* przycisk koszyka wraz z ikona */}
             <Link to="/koszyk" className="btn btn-outline-light me-2 d-flex align-items-center justify-content-center">
                 <Image src="/img/icons8-basket-48.png" />Koszyk
