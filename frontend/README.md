@@ -1,3 +1,16 @@
+## Instalacja pakietów
+Aby zainstalować potrzebne pakiety przejdź do folderu frontend i uruchom polecenie:
+```bash
+# W folderze frontend
+npm install
+```
+
+## Uruchomienie projektu
+W folderze frontend użyj polecenia:
+```bash
+npm run dev
+```
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
