@@ -2,8 +2,10 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const jwt = require('jsonwebtoken');
 const Cart = require('./models/Cart');
 const Book = require('./models/Book');
+const User = require('./models/User');
 const app = express();
 const port = 5000;
 
@@ -16,53 +18,13 @@ mongoose.connect('mongodb://localhost:27017/bookstore')
   .then(() => console.log('Połączono z bazą danych MongoDB'))
   .catch(err => console.log('Błąd połączenia z bazą danych:', err));
 
-// Endpoint do pobierania koszyka - używany testowo w koszyku w przyszłości do usunięcia
-app.get('/api/cart', async (req, res) => {
-  try {
-    const cart = await Cart.find(); // Pobiera wszystkie produkty w koszyku
-    res.json(cart);
-  } catch (err) {
-    res.status(500).json({ message: "Nie udało się pobrać koszyka." });
-  }
-});
-
 
 // Endpoint do pobrania wszystkich ksiazek
 app.get('/api/ksiazki-all', async (req, res) => {
 	try{
 		const book = await Book.find(); // pobiera wszystkie produkty z bazy
-		/*
-		console.log(book[0]);
-		console.log("--------------");
-		console.log(book[0].kategorie);
-		console.log(book[0]._id);
-		console.log(book[0]._id.toString());
-		//console.log(req);
-		let cenaallbooks=0;
-		let maxxzamowien=0;
-		let tytulmaxxzamowien="";
-		let tab=[];
-		book.forEach((elem) => {
-			cenaallbooks+=elem.cena;
-			
-			if(elem.zamowienia.length > maxxzamowien){
-				maxxzamowien=elem.zamowienia.length;
-				tytulmaxxzamowien=elem.tytul;
-			}
-			
-			if(elem.cena < 50){
-				tab.push(elem);
-			}
-			
-			//console.log(`id z bazy: ${elem._id.toString()}`);
-		});
-		console.log(`Najczesciej kupowana ksiazka: ${tytulmaxxzamowien} w ilosci ${maxxzamowien}`);
-		*/
-		
 		// obsluga odpowiedzi
 		res.json(book);
-		
-		//res.json(tab); // zwrocenie ksiazek z tablicy, ktore kosztuje mniej niz 50 zl
 	} catch(err){
 		res.status(500).json({ message: "Nie udało się pobrać ksiazek." });
 	}
@@ -72,22 +34,19 @@ app.get('/api/ksiazki-all', async (req, res) => {
 // Endpoint do pobierania listy bestsellerow
 app.get('/api/bestsellery', async (req, res) => {
   try {
-    // Wykonaj agregację w MongoDB, aby znaleźć książki z największą liczbą zamówień
-      const bestsellers = await Book.aggregate([
-          {
-              '$addFields': {
-                  'zamowienia_count': {
-                      '$size': '$zamowienia'
-                  }
-              }
-          }, {
-              '$sort': {
-                  'zamowienia_count': -1
-              }
-          }, {
-              '$limit': 8
-          }
-      ])
+    const bestsellers = await Book.aggregate([
+      {
+        $addFields: {
+          zamowienia_count: { $size: "$zamowienia" }
+        }
+      },
+      {
+        $sort: { zamowienia_count: -1 }
+      },
+      {
+        $limit: 8
+      }
+    ]);
 
     // Zwracamy bestsellerowe książki
     res.json(bestsellers);
@@ -113,7 +72,7 @@ app.get('/api/nowosci', async (req, res) => {
       return res.status(404).json({ message: 'Nie znaleziono książek' });
     }
 
-    // Zwracamy 5 najnowszych książek
+    // Zwracamy JSON najnowszych książek
     res.json(books);
   } catch (err) {
     res.status(500).json({ message: 'Wystąpił błąd podczas pobierania książek' });
@@ -219,30 +178,116 @@ app.get('/api/ksiazki-kategoria', async (req, res) => {
 });
 
 
-/*
+
+app.post('/api/login', async(req, res) => {
+	const { username, password } = req.body;
+	try {
+		// Sprawdzamy, czy użytkownik istnieje
+		const user = await User.findOne({ login: username });
+		if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+
+		// Porównanie hasła (bez bcrypt, porównujemy jawne hasła)
+		if (user.haslo !== password) {
+		  return res.status(401).json({ message: 'Nieprawidłowe hasło' });
+		}
+
+		// Generowanie tokenu JWT
+		const token = jwt.sign({ userId: user._id }, 'sekretny_klucz', { expiresIn: '1h' });
+		res.json({ token });
+  } catch (err){
+	  res.status(500).json({ message: 'Wystąpił błąd podczas logowania' });
+  }
+});
+
 app.post('/api/register', async (req, res) => {
+	const { username, password, email, name, surname } = req.body;
+	try {
+		// Sprawdzamy, czy użytkownik już istnieje
+		const existingUser = await User.findOne({ login: username });
+		if (existingUser) return res.status(400).json({ message: 'Użytkownik o tym loginie już istnieje.' });
+
+		// Tworzymy nowego użytkownika
+		const newUser = new User({
+			login: username, 
+			haslo: password,
+			email: email,
+			imie: name,
+			nazwisko: surname
+		});
+		await newUser.save();
+
+		res.status(201).json({ message: 'Użytkownik został zarejestrowany.' });
+	} catch (err) {
+		res.status(500).json({ message: 'Wystąpił błąd podczas rejestracji.' });
+	}
+});
+
+const authenticateToken = (req, res, next) => {
+	const token = req.header('Authorization')?.split(' ')[1]; // Oczekujemy formatu "Bearer <token>"
+	if (!token) return res.status(401).json({ message: 'Brak tokenu' });
+
+	jwt.verify(token, 'sekretny_klucz', (err, decoded) => {
+		if (err) return res.status(403).json({ message: 'Nieprawidłowy token' });
+		req.user = decoded; // Ustawiamy dane użytkownika w req
+		next();
+	});
+};
+
+/*
+to jako wzor z authenticateToken (autoryzacja tokenową)
+app.get('/user-data', authenticateToken, async (req, res) => {
   try {
-    const { login, haslo } = req.body; // Odbieramy dane z formularza (login i hasło)
+    // Pobierz dane użytkownika z bazy na podstawie jego ID (które mamy w tokenie)
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
 
-    // Sprawdzamy, czy użytkownik istnieje w tablicy "users"
-    const user = users.find(u => u.login === login);
-    if (!user) {
-      return res.status(401).json({ message: 'Błędny login lub hasło' }); // Błędny login
-    }
-
-    // Sprawdzamy poprawność hasła
-    const passwordMatch = await bcrypt.compare(haslo, user.passwordHash); // Porównujemy hasło z hashem w bazie
-    if (!passwordMatch) {
-      return res.status(401).json({ message: 'Błędny login lub hasło' }); // Błędne hasło
-    }
-
-    // Jeśli wszystko jest OK, logujemy użytkownika
-    res.status(200).json({ message: 'Zalogowano pomyślnie' });
+    // Zwróć dane użytkownika (np. imię, email)
+    res.json({ username: user.login, email: user.email });
   } catch (err) {
-    res.status(500).json({ message: 'Wystąpił błąd podczas logowania' });
+    res.status(500).json({ message: 'Błąd serwera' });
   }
 });
 */
+
+//app.get('/api/cart', authenticateToken, async (req, res) => {
+
+app.get('/api/cart', async (req, res) => {
+  try {
+	// Pobierz dane użytkownika z bazy na podstawie jego ID (które mamy w tokenie)
+    //const user = await User.findById(req.user.userId);
+    //if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+	//user._id - w tym powinno siedziec id uzytkownika ktore chce do zapytania uzyc
+	
+    const cart = await Cart.aggregate([
+		{
+			$match: {user_id: new mongoose.Types.ObjectId("6778fb0406f5360b4f7f6169")}
+		},
+		{
+			$lookup: {
+				from: "books",
+				localField: "product_id",
+				foreignField: "_id",
+				as: "dane_ksiazki"
+			}
+		},
+		{
+			$project: {
+				dane_ksiazki: { $arrayElemAt: ["$dane_ksiazki", 0] }
+			}
+		}
+	]);
+    res.json(cart);
+	console.log(cart[0]._id);
+	console.log(cart[0].dane_ksiazki);
+	console.log(cart._id);
+  } catch (err) {
+	console.log(err);
+    res.status(500).json({ message: "Nie udało się pobrać koszyka." });
+  }
+});
+
+
+
 
 
 
