@@ -1,5 +1,22 @@
+import { useEffect, useState } from "react";
 
 export function BookCard({ book }) {
+
+  /*
+
+  tutaj trzeba dodac tak, aby przycisk dodaj do koszyka działał tylko wtedy 
+  gdy uzytkownik jest zalogowany i cala funkcjonalnosc z tym zwiazana
+
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  useEffect(()=>{
+      const token=localStorage.getItem('token');
+      setIsLoggedIn(!!token);
+  },[]);
+  */
+
+
+
   return (
     <>
     <div className="card" style={{ width: '18rem', height: '28rem', maxHeight: '28rem' }}>

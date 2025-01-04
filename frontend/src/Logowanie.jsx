@@ -10,39 +10,37 @@ export function Logowanie() {
     const [loading, setLoading] = useState(false); /* poczatkowa wartosc zmiennej stanowej to bedzie false,
     loading to aktualna wartosc zmiennej stanowej, a setLoading to setter (funkcja ktora ja aktualizuje) dla niej
     */
+    const [successLogin, setSuccessLogin] = useState(false);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        
         setLoading(true); // ustawienie zmiannej stanowej loading na true, aby zablokowac przycisk w kodzie nizej
         setError(null); // resetowanie bledu przed wyslaniem danych
-
+        setSuccessLogin(false);
         // przygotowanie danych do wyslania (tworzymy obiekt z danymi)
-        const credentials = {
+        const daneLogowania = {
             username: username,
             password: password
         };
 
         try {
-            // zmienna `API_URL` powinna być Twoim endpointem backendu
-            const response = await fetch('http://localhost:5000/login', {
+            const response = await fetch('http://localhost:5000/api/login', {
                 method: 'POST',
                 headers: {
                 'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(credentials),
+                body: JSON.stringify(daneLogowania),
             });
 
             if (!response.ok) {
                 throw new Error('Podałeś nieprawidłowy login lub hasło. Popraw to!');
             }
 
-            // Jeśli logowanie się uda, możesz przekierować użytkownika lub ustawić token
+            // gdy logowanie sie uda ustawiamy token
             const data = await response.json();
-            console.log('Zalogowano pomyślnie:', data);
-            // Możesz przejść na inną stronę po zalogowaniu, np.:
-            // window.location.href = '/dashboard';
-
+            localStorage.setItem('token', data.token);
+            setSuccessLogin(true);
+            //onLogin(); - to raczej do kasacji
         } catch (error) {
             setError(error.message); // ustawienie bledu w przypadku niepowodzenia
         } finally {
@@ -57,6 +55,8 @@ export function Logowanie() {
             <h1 className="text-center mb-3">Logowanie</h1>
             {/* gdy blad istnieje to renderujemy alert, jak go nie ma to nic nie robimy, bo po co */}
             {error ? <Alert variant="danger" dismissible>{error}</Alert> : null}
+            {/* gdy poprawnie zalogowano to renderujemy alert, ktory o tym informuje */}
+            {successLogin ? <Alert variant="success" dismissible>Poprawnie zalogowano.</Alert> : null}
 
             <Form onSubmit={handleSubmit}>
                 <Form.Group controlId="formUsername">
@@ -81,7 +81,7 @@ export function Logowanie() {
                     />
                 </Form.Group>
 
-                <Button variant="primary" type="submit" className="w-100 mt-4 fw-bold" disabled={loading}>
+                <Button variant="primary" type="submit" className="w-100 mt-4 fw-bold" disabled={loading || successLogin}>
                     {loading ? 'Logowanie...' : 'Zaloguj się'}
                 </Button>
 

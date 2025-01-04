@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navbar, Nav, Container, Form, FormControl, Button, Dropdown, DropdownMenu, Image, Col, Alert} from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -79,6 +79,30 @@ export function MyNavbar(){
     };
 
 
+
+
+
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    useEffect(()=>{
+        const token=localStorage.getItem('token');
+        setIsLoggedIn(!!token);
+    },[]);
+    
+    const wyloguj=async()=>{
+        try{
+            localStorage.removeItem('token');
+            setIsLoggedIn(false);
+
+            // mozna dodac wyslanie zadania wylogowania do backendu
+            // np. await fetch('/logout', { method: 'POST' });
+        } catch(error){
+            setError(error.message);
+        }
+    };
+
+
+
+
     return (
         <>
 
@@ -88,10 +112,14 @@ export function MyNavbar(){
             <Link to="/koszyk" className="btn btn-outline-light me-2 d-flex align-items-center justify-content-center">
                 <Image src="/img/icons8-basket-48.png" />Koszyk
             </Link>
-            {/* przycisk do strony logowania */}
+
+            {/* przyciski logowania i rejestracji sa widoczne, gdy nie jestesmy zalogowani */}
+            {isLoggedIn ? 
+            <Button variant="outline-light" className='d-flex align-items-center justify-content-center' onClick={wyloguj}>Wyloguj</Button>
+            :(<>
             <Link to="/logowanie" className="btn btn-outline-light me-2 d-flex align-items-center justify-content-center">Logowanie</Link>
-            {/* przycisk do strony rejestracji */}
             <Link to="/rejestracja" className="btn btn-outline-light d-flex align-items-center justify-content-center">Rejestracja</Link>
+            </>)}
         </div>
 
         {/* pasek nawigacyjny */}
@@ -166,6 +194,13 @@ export function MyNavbar(){
 }
 
 /*
+
+{ przycisk do strony logowania }
+<Link to="/logowanie" className="btn btn-outline-light me-2 d-flex align-items-center justify-content-center">Logowanie</Link>
+{ przycisk do strony rejestracji }
+<Link to="/rejestracja" className="btn btn-outline-light d-flex align-items-center justify-content-center">Rejestracja</Link>
+
+
 export function MyNavbar(){
     return(
         <Navbar bg="dark" variant="dark" expand="lg">

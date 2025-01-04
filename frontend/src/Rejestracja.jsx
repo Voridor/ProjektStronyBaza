@@ -11,27 +11,25 @@ export function Rejestracja() {
     const [surname, setSurname] = useState('');
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [successRegister, setSuccessRegister] = useState(false);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-
-        // Prosta walidacja
+        // walidacja hasełka
         if (password !== confirmPassword) {
             setError('Hasła nie są identyczne.');
             return;
         }
-
-        // Walidacja formatu e-maila
+        // walidacja formatu e-maila
         const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
         if (!emailRegex.test(email)) {
             setError('Proszę wprowadzić prawidłowy adres e-mail.');
             return;
         }
-
         setLoading(true);
-        setError(null); // Resetowanie błędu przed wysłaniem
-
-        // Przygotowanie danych do wysłania
+        setError(null); // resetowanie błędu przed wysłaniem
+        setSuccessRegister(false);
+        // przygotowanie danych do wysłania (pakowanie ich w obiekt)
         const userData = {
             username: username,
             password: password,
@@ -39,10 +37,8 @@ export function Rejestracja() {
             name: name,
             surname: surname
         };
-
         try {
-            // Zmienna `API_URL` powinna być Twoim endpointem backendu
-            const response = await fetch('http://localhost:5000/register', {
+            const response = await fetch('http://localhost:5000/api/register', {
                 method: 'POST', // ta metoda wysyla dane na serwer
                 headers: {
                 'Content-Type': 'application/json', // to jest zdefiniowany naglowek jaki jest wysylany
@@ -50,17 +46,15 @@ export function Rejestracja() {
                 body: JSON.stringify(userData), // dane sa wysylane w formacie JSON
             });
 
-            if (!response.ok) {
-                throw new Error('Wystąpił błąd podczas rejestracji.');
+            if (!response.ok){
+                const blad=await response.json();
+                throw new Error(blad.message);
+                //throw new Error('Wystąpił błąd podczas rejestracji.');
             }
-
-            const data = await response.json();
-            console.log('Zarejestrowano pomyślnie:', data);
-            // Możesz przekierować użytkownika na stronę logowania, np.:
-            // window.location.href = '/login';
-
+            setSuccessRegister(true);
+            // można dodac przekierowanie na strone główną
         } catch (error) {
-            setError(error.message); // Ustawienie błędu w przypadku niepowodzenia
+            setError(error.message); // ustawienie błędu w przypadku niepowodzenia
         } finally {
             setLoading(false);
         }
@@ -73,6 +67,8 @@ export function Rejestracja() {
             <h1 className="text-center mb-3">Rejestracja</h1>
             {/* gdy blad istnieje to renderujemy alert, jak go nie ma to nic nie robimy, bo po co */}
             {error ? <Alert variant="danger" dismissible>{error}</Alert> : null}
+            {/* gdy poprawnie zalogowano to renderujemy alert, ktory o tym informuje */}
+            {successRegister ? <Alert variant="success" dismissible>Utworzono konto.</Alert> : null}
             
             <Form onSubmit={handleSubmit}>
                 <Form.Group controlId="formUsername">
