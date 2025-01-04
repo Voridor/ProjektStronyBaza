@@ -73,22 +73,21 @@ app.get('/api/ksiazki-all', async (req, res) => {
 app.get('/api/bestsellery', async (req, res) => {
   try {
     // Wykonaj agregację w MongoDB, aby znaleźć książki z największą liczbą zamówień
-    const bestsellers = await Book.aggregate([
-      {
-        // Tworzymy nową zmienną "zamowienia_count" zliczającą liczbę zamówień dla każdej książki
-        $addFields: {
-          zamowienia_count: { $size: "$zamowienia" }
-        }
-      },
-      {
-        // Sortujemy książki według liczby zamówień w malejącej kolejności
-        $sort: { zamowienia_count: -1 }
-      },
-      {
-        // Opcjonalnie: Ograniczamy wynik do pierwszych N bestsellerów (np. top 5)
-        $limit: 8
-      }
-    ]);
+      const bestsellers = await Book.aggregate([
+          {
+              '$addFields': {
+                  'zamowienia_count': {
+                      '$size': '$zamowienia'
+                  }
+              }
+          }, {
+              '$sort': {
+                  'zamowienia_count': -1
+              }
+          }, {
+              '$limit': 8
+          }
+      ])
 
     // Zwracamy bestsellerowe książki
     res.json(bestsellers);
