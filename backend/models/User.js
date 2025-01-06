@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 
 // Schemat uzytkownika
 const userSchema = new mongoose.Schema({
-  _id: { type: mongoose.Schema.Types.ObjectId },
   login: { type: String, required: true, unique: true },
   haslo: { type: String, required: true },
   email: { type: String, required: true },

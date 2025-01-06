@@ -17,12 +17,11 @@ const bookSchema = new mongoose.Schema({
   ilosc: { type: Number, required: true },
   zamowienia: [
     {
-      data_zamowienia: { type: Date, required: true },
-      kwota_zamowienia: { type: Number, required: true },
-      imie_zamawiajacego: { type: String, required: true },
-      nazwisko_zamawiajacego: { type: String, required: true },
-      email_zamawiajacego: { type: String, required: true },
-      ilosc: { type: Number, required: true }
+		_id: false,
+		ilosc: { type: Number },
+		data_zamowienia: { type: Date },
+		kwota_zamowienia: { type: Number },
+		user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
     }
   ],
   okladka_adres: { type: String, required: true },
@@ -31,3 +30,16 @@ const bookSchema = new mongoose.Schema({
 const Book = mongoose.model('Book', bookSchema, 'books'); // trzeci parametr to nazwa kolekcji
 
 module.exports = Book;
+
+/*
+zamowienia: [
+    {
+      data_zamowienia: { type: Date, required: true },
+      kwota_zamowienia: { type: Number, required: true },
+      imie_zamawiajacego: { type: String, required: true },
+      nazwisko_zamawiajacego: { type: String, required: true },
+      email_zamawiajacego: { type: String, required: true },
+      ilosc: { type: Number, required: true }
+    }
+  ],
+*/

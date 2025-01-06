@@ -23,8 +23,7 @@ mongoose.connect('mongodb://localhost:27017/bookstore')
 app.get('/api/ksiazki-all', async (req, res) => {
 	try{
 		const book = await Book.find(); // pobiera wszystkie produkty z bazy
-		// obsluga odpowiedzi
-		res.json(book);
+		res.json(book); // obsluga odpowiedzi
 	} catch(err){
 		res.status(500).json({ message: "Nie udało się pobrać ksiazek." });
 	}
@@ -34,20 +33,15 @@ app.get('/api/ksiazki-all', async (req, res) => {
 // Endpoint do pobierania listy bestsellerow
 app.get('/api/bestsellery', async (req, res) => {
   try {
-    const bestsellers = await Book.aggregate([
-      {
-        $addFields: {
-          zamowienia_count: { $size: "$zamowienia" }
-        }
-      },
-      {
-        $sort: { zamowienia_count: -1 }
-      },
-      {
-        $limit: 8
-      }
-    ]);
-
+	// strict false zezwala na nieokreslone pola
+	let Bestseller;
+	// zabezpieczenie przed ponownym tworzeniem modelu
+	if(mongoose.models.Bestseller){
+		Bestseller=mongoose.models.Bestseller;
+	} else{
+		Bestseller=mongoose.model('Bestseller', new mongoose.Schema({},{strict:false}),'bestsellery');
+	}
+	const bestsellers=await Bestseller.find();
     // Zwracamy bestsellerowe książki
     res.json(bestsellers);
   } catch (err) {
@@ -59,19 +53,17 @@ app.get('/api/bestsellery', async (req, res) => {
 // Endpoint do pobierania 8 najnowszych książek na podstawie daty wydania ksiazki
 app.get('/api/nowosci', async (req, res) => {
   try {
-    const books = await Book.aggregate([
-	{
-		$sort: { "data_wydania": -1 } // sortujemy po dacie wydania malejaco (bo jest parametr -1)
-	},
-	{
-		$limit: 8
+	let NoweKsiazki;
+	if(mongoose.models.NoweKsiazki){
+		NoweKsiazki=mongoose.models.NoweKsiazki;
+	} else{
+		NoweKsiazki=mongoose.model('NoweKsiazki', new mongoose.Schema({},{strict:false}),'nowosci');
 	}
-	]);
-
+	const books=await NoweKsiazki.find();
+	delete mongoose.models.NoweKsiazki;
     if (books.length === 0) {
       return res.status(404).json({ message: 'Nie znaleziono książek' });
     }
-
     // Zwracamy JSON najnowszych książek
     res.json(books);
   } catch (err) {
@@ -85,11 +77,9 @@ app.get('/api/nowosci', async (req, res) => {
 app.get('/api/ksiazki-tytul', async (req, res) => {
   try {
     const { tytul } = req.query; // Pobieramy tytul książki z zapytania (query string)
-    
     if (!tytul) {
       return res.status(400).json({ message: 'Brak tytułu w zapytaniu' });
     }
-
     // Wyszukujemy książki, których tytuł zawiera przekazany ciąg znaków (bez względu na wielkość liter)
     const books = await Book.find({
       tytul: { $regex: tytul, $options: 'i' } // $options: 'i' oznacza ignorowanie wielkości liter
@@ -116,11 +106,9 @@ app.get('/api/ksiazki-autor', async (req, res) => {
   try {
     const { autor } = req.query; // Pobieramy autora książki z zapytania (query string)
     // pobierany autor to moze byc imie lub nazwisko faktycznego autora w bazie danych
-	
     if(!autor){
       return res.status(400).json({ message: 'Nie podano autora w zapytaniu' });
     }
-
     // Wyszukujemy książki, które napisal dane autor poprzez przekazany ciąg znaków (bez względu na wielkość liter)
     const books = await Book.find({
 		autorzy:{
@@ -178,7 +166,7 @@ app.get('/api/ksiazki-kategoria', async (req, res) => {
 });
 
 
-
+// endpoint do logowania
 app.post('/api/login', async(req, res) => {
 	const { username, password } = req.body;
 	try {
@@ -192,13 +180,15 @@ app.post('/api/login', async(req, res) => {
 		}
 
 		// Generowanie tokenu JWT
-		const token = jwt.sign({ userId: user._id }, 'sekretny_klucz', { expiresIn: '1h' });
+		const token = jwt.sign({ userId: user._id }, 'trudny_klucz', { expiresIn: '1h' });
 		res.json({ token });
   } catch (err){
 	  res.status(500).json({ message: 'Wystąpił błąd podczas logowania' });
   }
 });
 
+
+// endpoint do rejestracji
 app.post('/api/register', async (req, res) => {
 	const { username, password, email, name, surname } = req.body;
 	try {
@@ -222,86 +212,256 @@ app.post('/api/register', async (req, res) => {
 	}
 });
 
+
+// funckcja do autoryzacji operacji z tokenem
 const authenticateToken = (req, res, next) => {
 	const token = req.header('Authorization')?.split(' ')[1]; // Oczekujemy formatu "Bearer <token>"
 	if (!token) return res.status(401).json({ message: 'Brak tokenu' });
 
-	jwt.verify(token, 'sekretny_klucz', (err, decoded) => {
+	jwt.verify(token, 'trudny_klucz', (err, decoded) => {
 		if (err) return res.status(403).json({ message: 'Nieprawidłowy token' });
 		req.user = decoded; // Ustawiamy dane użytkownika w req
 		next();
 	});
 };
 
-/*
-to jako wzor z authenticateToken (autoryzacja tokenową)
-app.get('/user-data', authenticateToken, async (req, res) => {
+
+// endpoint do pobierania zawartosci koszyka dla użytkownika
+// Zakładamy, że użytkownik ma jeden koszyk dla siebie.
+app.get('/api/cart', authenticateToken, async (req, res) => {
   try {
-    // Pobierz dane użytkownika z bazy na podstawie jego ID (które mamy w tokenie)
+	// pobieranie danych użytkownika z bazy na podstawie jego ID (które jest w tokenie)
     const user = await User.findById(req.user.userId);
     if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
-
-    // Zwróć dane użytkownika (np. imię, email)
-    res.json({ username: user.login, email: user.email });
-  } catch (err) {
-    res.status(500).json({ message: 'Błąd serwera' });
-  }
-});
-*/
-
-//app.get('/api/cart', authenticateToken, async (req, res) => {
-
-app.get('/api/cart', async (req, res) => {
-  try {
-	// Pobierz dane użytkownika z bazy na podstawie jego ID (które mamy w tokenie)
-    //const user = await User.findById(req.user.userId);
-    //if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
-	//user._id - w tym powinno siedziec id uzytkownika ktore chce do zapytania uzyc
+	const cart = await Cart.findOne({ user_id: user._id, status: "otwarty" }).populate('ksiazki.book_id');
+	if(!cart){
+		return res.status(404).json({ message: 'Koszyk nie znaleziony' });
+	}
 	
-    const cart = await Cart.aggregate([
-		{
-			$match: {user_id: new mongoose.Types.ObjectId("6778fb0406f5360b4f7f6169")}
-		},
-		{
-			$lookup: {
-				from: "books",
-				localField: "product_id",
-				foreignField: "_id",
-				as: "dane_ksiazki"
-			}
-		},
-		{
-			$project: {
-				dane_ksiazki: { $arrayElemAt: ["$dane_ksiazki", 0] }
-			}
-		}
-	]);
-    res.json(cart);
-	console.log(cart[0]._id);
-	console.log(cart[0].dane_ksiazki);
-	console.log(cart._id);
+	// przygotowanie odpowiedzi z informacjami o książkach w koszyku
+    const cartItems = cart.ksiazki.map(item => ({
+		book_id: item.book_id._id,
+		tytul: item.book_id.tytul,
+		ilosc: item.ilosc,
+		cena: item.cena,
+		calkowita_cena: item.subtotal,
+		okladka_adres: item.book_id.okladka_adres
+    }));
+    res.status(200).json(cartItems);
   } catch (err) {
-	console.log(err);
     res.status(500).json({ message: "Nie udało się pobrać koszyka." });
   }
 });
 
 
-
-
-
-
-// Endpoint do usuwania produktu z koszyka
-app.delete('/api/cart/:productId', async (req, res) => {
+// endpoint do usuwania ksiazki z koszyka
+app.delete('/api/cart/:bookID', authenticateToken, async (req, res) => {
+  const { bookID } = req.params;
   try {
-    const { productId } = req.params;
-    await Cart.deleteOne({ productId }); // Usuwa produkt na podstawie productId
-    const cart = await Cart.find();
-    res.json(cart);
+	const user = await User.findById(req.user.userId);
+	if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+	
+	// Sprawdzamy, czy koszyk użytkownika istnieje i czy jest otwarty
+    let cart = await Cart.findOne({ user_id: user._id, status: "otwarty" });
+    if(!cart){
+		return res.status(404).json({ message: 'Koszyk nie został znaleziony' });
+    }
+	
+	// Sprawdzamy, czy książka istnieje w koszyku
+    const bookIndex = cart.ksiazki.findIndex(item => item.book_id.toString() === bookID);
+    if (bookIndex === -1) {
+		return res.status(404).json({ message: 'Książka nie znajduje się w koszyku' });
+    }
+
+    // Usuwamy książkę z koszyka
+    cart.ksiazki.splice(bookIndex, 1);
+
+    // Zapisujemy zmiany w koszyku
+    //await cart.save();  -- stary sposob
+	await Cart.findOneAndUpdate(
+		{_id: cart._id},
+		{$set: {ksiazki: cart.ksiazki}}, // ustawiamy zaktualizowana tablice ksiazek
+		{new: true}
+	);
+
+    // Zwracamy zaktualizowany koszyk
+	const cartItems = cart.ksiazki.map(item => ({
+		book_id: item.book_id._id,
+		tytul: item.book_id.tytul,
+		ilosc: item.ilosc,
+		cena: item.cena,
+		calkowita_cena: item.subtotal,
+		okladka_adres: item.book_id.okladka_adres
+    }));
+    res.status(200).json(cartItems);
   } catch (err) {
     res.status(500).json({ message: "Nie udało się usunąć produktu." });
   }
 });
+
+
+// endpoint do dodawania ksiazki do koszyka
+app.post('/api/cart-add/:bookID', authenticateToken, async (req, res) => {
+  const { bookID } = req.params;
+  const { ilosc } = req.body;
+  try {
+	const user = await User.findById(req.user.userId);
+	if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+	
+	// sprawdzenie czy książka istanieje w bazie (dla bezpieczeństwa)
+	const book=await Book.findById(bookID);
+	if (!book){
+		return res.status(404).json({message:"Książka nie została odnaleziona w bazie."});
+	}
+	
+	// sprawdzenie czy koszyk użytkownika istnieje i czy jest otwarty
+    let cart = await Cart.findOne({ user_id: user._id, status: "otwarty" });
+    if(!cart){
+		// nie mamy koszyka, wiec trzeba jakis stworzyc dla uzytkownika
+		cart=new Cart({
+			user_id: user._id,
+			ksiazki: [],
+			data_utworzenia: new Date(),
+			status: "otwarty"
+		});
+    }
+	
+	// sprawdzenie czy książka juz jest w koszyku
+    const existBookIndex = cart.ksiazki.findIndex(item => item.book_id.toString() === bookID);
+    if (existBookIndex !== -1) {
+		// gdy jest w koszyku to zwiekszamy jej ilosc
+		cart.ksiazki[existBookIndex].ilosc+=ilosc;
+		cart.ksiazki[existBookIndex].subtotal=cart.ksiazki[existBookIndex].ilosc*cart.ksiazki[existBookIndex].cena;
+    } else{
+		// jak jej nie ma to dodajemy
+		cart.ksiazki.push({
+			book_id: bookID,
+			ilosc: ilosc,
+			cena: book.cena,
+			subtotal: book.cena*ilosc
+		});
+	}
+	
+	// wykonanie zapisu koszyka
+	await cart.save();
+	res.status(200).json({ message: 'Produkt został dodany.' });
+  } catch (err) {
+    res.status(500).json({ message: "Nie udało się dodać książki do koszyka." });
+  }
+});
+
+
+
+
+
+
+
+// endpoint do zamawiania, czyli zmieniemay stan koszyka na zamkniety i dodajemy informacje
+// o zamowieniu do kolekcji books (wewnątrz kolekcji tablica zamowienia)
+/*
+app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
+  const session = await mongoose.startSession(); // Rozpoczęcie sesji MongoDB
+  session.startTransaction(); // Rozpoczęcie transakcji
+  try {
+	const user = await User.findById(req.user.userId);
+	if (!user){
+		throw new Error('Użytkownik nie znaleziony');
+	}
+	// sprawdzenie czy koszyk użytkownika istnieje i czy jest otwarty
+    let cart = await Cart.findOne({ user_id: user._id, status: "otwarty" });
+    if(!cart){
+		throw new Error('Otwarty koszyk nie został znaleziony');
+    }
+	
+	for(const item of cart.ksiazki){
+		const {book_id, ilosc, subtotal}=item;
+		//trzeba poszukac ksiazki w kolekcji books
+		const book=await Book.findById(book_id);
+		if(!book){
+			throw new Error(`Książka o ID ${book_id} nie została znaleziona w bazie.`);
+		}
+		// sprawdzanie czy w magazynie jest wystarczaja liczba ksiazek do realizacji zamowienia
+		if(book.ilosc<ilosc){
+			throw new Error(`Brak wystarczającej ilości egzemplarzy książki "${book.tytul}". Dostępne: ${book.ilosc}, zamówione: ${ilosc}.`);
+		}
+		// dodajemy szczegoly zamowienia do pola zamowienia w ksiazce
+		book.zamowienia.push({
+			ilosc: ilosc,
+			data_zamowienia: new Date(),
+			kwota_zamowienia: subtotal,
+			user_id: user._id
+		});
+		// zmiejszenie ilosci dostepnych książek
+		book.ilosc-=ilosc;
+		// zapisujemy zmiany
+		//await book.save();
+		await book.save({session});
+	}
+	
+	await Cart.updateOne({_id: cart._id}, {$set: {status:"zamkniety"}}, {session});
+	await session.commitTransaction(); // zatwierdzenie transakcji
+	session.endSession();
+	res.status(200).json({ message: 'Zamowiono ksiazki.' });
+  } catch (err) {
+	await session.abortTransaction();
+	session.endSession();
+	console.log(err);
+    res.status(500).json({ message: "Nie udało się zamowic ksiazek, ktore sa w koszyku." });
+  }
+});
+*/
+app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+    // szukanie otwargego koszyka
+    let cart = await Cart.findOne({ user_id: user._id, status: "otwarty" });
+    if (!cart) {
+      return res.status(404).json({ message: 'Otwarty koszyk nie został znaleziony' });
+    }
+
+    // Sprawdzenie dostępności książek
+    for (const item of cart.ksiazki) {
+      const { book_id, ilosc } = item;
+      const book = await Book.findById(book_id);
+      if (!book) {
+        return res.status(404).json({ message: `Książka o ID ${book_id} nie została znaleziona.` });
+      }
+      if (book.ilosc < ilosc) {
+        return res.status(400).json({
+          message: `Brak wystarczającej ilości książki "${book.tytul}". Dostępne: ${book.ilosc}, zamówione: ${ilosc}.`
+        });
+      }
+    }
+
+    // Jeśli wszystkie książki są dostępne, wykonaj zmiany
+    for (const item of cart.ksiazki) {
+      const { book_id, ilosc, subtotal } = item;
+      const book = await Book.findById(book_id);
+      // dodajemy szczegoly zamowienia do pola zamowienia w ksiazce
+	  book.zamowienia.push({
+		ilosc: ilosc,
+		data_zamowienia: new Date(),
+		kwota_zamowienia: subtotal,
+		user_id: user._id
+	  });
+      book.ilosc -= ilosc;
+      await book.save();
+    }
+    await Cart.updateOne({_id: cart._id },{$set: {status: "zamkniety"}});
+    res.status(200).json({ message: 'Zamówienie zostało złożone pomyślnie.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Wystąpił błąd podczas składania zamówienia.' });
+  }
+});
+
+
+
+
+
+
+
 
 
 // Uruchomienie serwera
