@@ -10,7 +10,14 @@ export function MyNavbar(){
     //const [books, setBooks]=useState([]); // te zmienne mialy przechoywac ksiazki pobrane z danych ale ze wzgledu na 
     // asynchroniczność setBooks to nie nadąża przypisać dane do books i przekazuje czaasmi pustą tablice
     const [error, setError]=useState(null);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
     const navigate=useNavigate(); // hook potrzebny do nawigacji, czyli do pozniejszego przekierowanie na strone wynikow
+
+    useEffect(()=>{
+        const token=localStorage.getItem('token');
+        setIsLoggedIn(!!token);
+    },[]);
+
 
     // funkcja, ktora obsluguje wyszukiwanie z pola tekstowego
     const wyszukuj=async()=>{
@@ -33,7 +40,7 @@ export function MyNavbar(){
                 'Cache-Control': 'no-cache' // wylaczenie cache
             }});
             if(!response.ok){ // gdy odpowiedz nie jest ok to wywalamy errora
-                throw new Error("Błąd pobrania danych i tyle.");
+                throw new Error("Błąd pobrania danych.");
             }
             const result=await response.json(); // konwertacja danych do obiketu JSON
 
@@ -42,8 +49,6 @@ export function MyNavbar(){
 
             setLoading(false);
 
-            //console.log(books);
-            //console.log(result);
             // po uzyskaniu wynikow z bazy przekierowujemy na strone z reprezentacja tych wynikow
             navigate("/searchresult", { state: { wynik: result, rodzajWyszukiwania: "autorOrTytul" } });
         } catch(error){
@@ -66,7 +71,7 @@ export function MyNavbar(){
                 headers: { "Cache-Control": "no-cache" }
             });
             if(!response.ok){
-                throw new Error("Błąd pobrania danych i tyle.");
+                throw new Error("Błąd pobrania danych.");
             }
             const result=await response.json(); // konwertujemy dane na obiekt JSON
             setLoading(false);
@@ -78,29 +83,17 @@ export function MyNavbar(){
         }
     };
 
-
-
-
-
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    useEffect(()=>{
-        const token=localStorage.getItem('token');
-        setIsLoggedIn(!!token);
-    },[]);
     
     const wyloguj=async()=>{
         try{
             localStorage.removeItem('token');
             setIsLoggedIn(false);
-
             // mozna dodac wyslanie zadania wylogowania do backendu
             // np. await fetch('/logout', { method: 'POST' });
         } catch(error){
             setError(error.message);
         }
     };
-
-
 
 
     return (
@@ -183,6 +176,7 @@ export function MyNavbar(){
                             </DropdownMenu>
                         </Dropdown>
                         <Nav.Link as={Link} to="/bestsellers">Bestsellery</Nav.Link>
+                        <Nav.Link as={Link} to="/allbookspage">Wszystkie książki</Nav.Link>
                         <Nav.Link as={Link} to="/kontakt">Kontakt</Nav.Link>
                     </Nav>
                 </Navbar.Collapse>
@@ -193,46 +187,3 @@ export function MyNavbar(){
     );
 }
 
-/*
-
-{ przycisk do strony logowania }
-<Link to="/logowanie" className="btn btn-outline-light me-2 d-flex align-items-center justify-content-center">Logowanie</Link>
-{ przycisk do strony rejestracji }
-<Link to="/rejestracja" className="btn btn-outline-light d-flex align-items-center justify-content-center">Rejestracja</Link>
-
-
-export function MyNavbar(){
-    return(
-        <Navbar bg="dark" variant="dark" expand="lg">
-        <Navbar.Brand href="#home">Księgarnia Supreme</Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="ml-auto">
-            <Nav.Link href="#opcja1">Opcja 1</Nav.Link>
-            <Nav.Link href="#opcja2">Opcja 2</Nav.Link>
-            <Nav.Link href="#opcja3">Opcja 3</Nav.Link>
-            <Nav.Link href="https://www.google.com">Opcja 4</Nav.Link>
-            </Nav>
-        </Navbar.Collapse>
-        </Navbar>
-    );
-}
-
-
-{ Treść strony głównej }
-<Container className="mt-4">
-<h1>Witamy w naszej księgarni!</h1>
-<p>
-    Znajdź książki, które pokochasz. Przeglądaj nasze kategorie, bestsellerowe pozycje, 
-    a także nowości wydawnicze.
-</p>
-<h2>Kategorie</h2>
-<p>Przykładowe kategorie: Literatura piękna, Fantastyka, Nauka, Książki dla dzieci...</p>
-
-<h2>Bestsellery</h2>
-<p>Sprawdź, co czytelnicy wybierają najczęściej!</p>
-
-<h2>Kontakt</h2>
-<p>Masz pytania? Skontaktuj się z nami pod adresem kontakt@ksiegarnia.pl.</p>
-</Container>
-*/

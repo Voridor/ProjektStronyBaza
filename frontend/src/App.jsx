@@ -1,9 +1,5 @@
-//import { useState } from 'react'
 /*import './App.css' w main.jsx jest bootstrapowy css importowany, 
 wiec ten tutaj sie naklada dodatkowo*/
-//import {BookList} from './BookList.jsx'
-//import { MyFooter } from './MyFooter.jsx'
-//import {MyNavbar} from './MyNavbar.jsx'
 import {HomePage} from './HomePage.jsx'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Kontakt from './Kontakt.jsx';
@@ -12,6 +8,7 @@ import Logowanie from './Logowanie.jsx';
 import Rejestracja from './Rejestracja.jsx';
 import Koszyk from './Koszyk.jsx';
 import SearchResult from './SearchResult.jsx';
+import AllBooksPage from './AllBooksPage.jsx';
 
 function App() {
   return (
@@ -25,6 +22,7 @@ function App() {
           <Route path="/rejestracja" element={<Rejestracja/>}/>
           <Route path="/koszyk" element={<Koszyk/>}/>
           <Route path="/searchresult" element={<SearchResult/>}/>
+          <Route path="/allbookspage" element={<AllBooksPage/>}/>
         </Routes>
       </Router>
       

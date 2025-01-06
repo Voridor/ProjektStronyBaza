@@ -4,7 +4,6 @@ import { MyNavbar } from "./MyNavbar";
 import { BookCard } from "./BookCard";
 import { useEffect, useState } from "react";
 
-
 /*
 z tej tablic pobierano kiedys statycznie dane jak nie korzystano z bazy danych
 const books = [
@@ -100,22 +99,6 @@ export function Bestsellers(){
         <div className="container mt-3">
             <Alert variant="info">Brak bestsellerów.</Alert>
         </div>}
-        
-
-
-        {/* 
-        <div className="mt-3">
-            <h1 className="text-center mb-3">Bestsellery w naszej księgarni:</h1>
-            <Container className='d-flex flex-wrap justify-content-center align-items-center'>
-                {books.map(book => (
-                <div className="m-2" key={book.id}>
-                    <BookCard book={book} />
-                </div>
-                ))}
-            </Container>
-        </div>
-        */}
-
 
         <MyFooter/>
         </>

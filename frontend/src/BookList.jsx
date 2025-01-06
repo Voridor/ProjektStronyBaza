@@ -64,16 +64,6 @@ export function BookList() {
         ))}
     </Container> : <Alert variant="info">Brak nowości.</Alert>}
 
-    {/* stary kod sprzed dodania bazy danych
-    <Container className='d-flex flex-wrap justify-content-center align-items-center'>
-        {books.map(book => (
-          <div className="m-2" key={book.id}>
-            <BookCard book={book} />
-          </div>
-        ))}
-    </Container>
-    */}
-
     </>
   );
 }
