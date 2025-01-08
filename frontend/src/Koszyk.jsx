@@ -101,7 +101,7 @@ function Koszyk(){
             setError(error.message); // Ustawienie błędu w przypadku niepowodzenia
         } finally {
             setLoading(false);
-            //handleClose();
+            handleClose();
         }
     };
 
@@ -192,6 +192,8 @@ function Koszyk(){
 
                     <div className="text-end">
                         <h4>Suma: {cenaAllProdukty()} zł</h4>
+                        <h4>Rabat: </h4>
+                        <h4>Kwota po rabacie: </h4>
                         <Button variant="primary" className='fw-bold w-25 mt-2' onClick={handleShow}>Zapłać</Button>
                     </div>
                     </>
