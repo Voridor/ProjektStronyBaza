@@ -14,7 +14,7 @@ app.use(cors());
 app.use(bodyParser.json()); // mowimy expressowi aby akceptowal JSON-a i dane beda przesylane w tym formacie
 
 // Połączenie z MongoDB
-mongoose.connect('mongodb://localhost:27017/bookstore')
+mongoose.connect('mongodb://127.0.0.1:27017/bookstore')
   .then(() => console.log('Połączono z bazą danych MongoDB'))
   .catch(err => console.log('Błąd połączenia z bazą danych:', err));
 
@@ -457,9 +457,67 @@ app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
 });
 
 
-
-
-
+/* endpoint do pobierania rabatu dla klienta
+obliczany jest na podstawie łącznej kwoty wydanej na zamowienia(pole/tablica w kolekcji books)
+*/
+//app.get('/api/klient-rabat', authenticateToken, async (req, res) => {
+app.get('/api/klient-rabat', async (req, res) => {
+  try {
+	// pobieranie danych użytkownika z bazy na podstawie jego ID (które jest w tokenie)
+    //const user = await User.findById(req.user.userId);
+	const user = await User.find({ login: "test" });
+    if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+	
+	// agregacja ponizej policzy nam rabat 
+	const rabat = await User.aggregate([
+	{
+		$lookup:{
+			from:"books",
+			localField: "_id",
+			foreignField: "zamowienia.user_id",
+			as: "user_orders"
+		}
+	},
+	{$unwind: "$user_orders"},
+	{$unwind: "$user_orders.zamowienia"},
+	{
+		$group:{
+			_id: "$_id",
+			wydana_kwota: {$sum: "$user_orders.zamowienia.kwota_zamowienia"}
+		}
+	},
+	{
+		$addFields:{
+			rabat:{
+				$switch: {
+					branches:[
+						{case:{$gt:["$wydana_kwota", 1000]},then:15},
+						{case:{$and:[{$gte:["$wydana_kwota", 200]},{$lte:["$wydana_kwota",1000]}]},then:8},
+						{case:{$and:[{$gte:["$wydana_kwota",125]},{$lt:["$wydana_kwota",200]}]},then:5}
+					],
+					default:0
+				}
+			}
+		}
+	},
+	{
+		$project:{
+			_id: 0,
+			wydana_kwota: 1,
+			rabat: 1
+		}
+	}
+	]);
+	if (!rabat){
+      return res.status(404).json({ message: 'Nie udało się wyznaczyć rabatu dla klienta.' });
+    }
+	
+    res.status(200).json(rabat);
+  } catch (err){
+	console.log(err);
+    res.status(500).json({ message: "Błąd w api rabatowym." });
+  }
+});
 
 
 
