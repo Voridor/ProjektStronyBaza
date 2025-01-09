@@ -351,11 +351,6 @@ app.post('/api/cart-add/:bookID', authenticateToken, async (req, res) => {
 });
 
 
-
-
-
-
-
 // endpoint do zamawiania, czyli zmieniemay stan koszyka na zamkniety i dodajemy informacje
 // o zamowieniu do kolekcji books (wewnątrz kolekcji tablica zamowienia)
 /*
@@ -435,7 +430,7 @@ app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
     }
 
     // Jeśli wszystkie książki są dostępne, wykonaj zmiany
-    for (const item of cart.ksiazki) {
+    /*for (const item of cart.ksiazki) {
       const { book_id, ilosc, subtotal } = item;
       const book = await Book.findById(book_id);
       // dodajemy szczegoly zamowienia do pola zamowienia w ksiazce
@@ -447,8 +442,8 @@ app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
 	  });
       book.ilosc -= ilosc;
       await book.save();
-    }
-    await Cart.updateOne({_id: cart._id },{$set: {status: "zamkniety"}});
+    }*/
+    await Cart.updateOne({_id: cart._id },{$set: {status: "realizowane"}});
     res.status(200).json({ message: 'Zamówienie zostało złożone pomyślnie.' });
   } catch (err) {
     console.error(err);
@@ -517,6 +512,33 @@ app.get('/api/klient-rabat', async (req, res) => {
 	console.log(err);
     res.status(500).json({ message: "Błąd w api rabatowym." });
   }
+});
+
+app.get('/api/isadmin', authenticateToken,async (req, res) => {
+	//const token = req.query
+	const token = req.header('Authorization')?.split(' ')[1];
+
+	const decoded = jwt.decode(token);
+
+	const userid=decoded.userId;
+
+	try {
+		const user = await User.findById(userid);
+		if (!user) {
+			return res.status(404).json({ message: 'Użytkownik nie znaleziony' })
+		};
+		if(user.rola=="Admin"){
+			res.status(200).json({ message: 'Użytkownik jest administratorem.' });
+		} else {
+			res.status(403).json({ message: 'Użytkownik nie jest administratorem.' });
+			console.log("Użytkownik nie jest administratorem.");
+		}
+	} catch (err){
+		res.status(500).json({ message: 'Wystąpił błąd podczas sprawdzania uprawnień.' });
+	}
+
+
+
 });
 
 

@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true },
   imie: { type: String, required: true },
   nazwisko: { type: String, required: true },
+  rola: { type: String, required: false, default: 'user' },
 });
 
 const User = mongoose.model('User', userSchema, 'users'); // trzeci parametr to nazwa kolekcji
