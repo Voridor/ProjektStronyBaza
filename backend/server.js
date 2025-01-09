@@ -514,14 +514,13 @@ app.get('/api/klient-rabat', async (req, res) => {
   }
 });
 
-app.get('/api/isadmin', authenticateToken,async (req, res) => {
-	//const token = req.query
+
+// endpoint do pobrania informacji o tym czy uzytkownik to administrator
+app.get('/api/isadmin', authenticateToken, async (req, res) => {
+	//const token = req.user.userId to to samo co nizej
 	const token = req.header('Authorization')?.split(' ')[1];
-
 	const decoded = jwt.decode(token);
-
 	const userid=decoded.userId;
-
 	try {
 		const user = await User.findById(userid);
 		if (!user) {
@@ -529,16 +528,13 @@ app.get('/api/isadmin', authenticateToken,async (req, res) => {
 		};
 		if(user.rola=="Admin"){
 			res.status(200).json({ message: 'Użytkownik jest administratorem.' });
-		} else {
-			res.status(403).json({ message: 'Użytkownik nie jest administratorem.' });
-			console.log("Użytkownik nie jest administratorem.");
+		} 
+		else {
+			res.status(403).json({ message: 'Użytkownik nie jest administratorem.' }); 
 		}
 	} catch (err){
 		res.status(500).json({ message: 'Wystąpił błąd podczas sprawdzania uprawnień.' });
 	}
-
-
-
 });
 
 

@@ -16,7 +16,6 @@ export function MyNavbar() {
         const token = localStorage.getItem('token');
         if (token !== null) {
             try {
-                //const response = await fetch(`http://localhost:5000/api/isadmin?token=${localStorage.getItem('token')}`, {
                 const response = await fetch(`http://localhost:5000/api/isadmin`, {
                     method: 'GET',
                     headers: {'Authorization': `Bearer ${token}`,},
@@ -26,7 +25,7 @@ export function MyNavbar() {
                     setIsAdministrator(true);
                 }
             } catch (error) {
-                console.error('Error checking admin status:', error);
+                console.error('Błąd sprawdzania czy admin:', error.message);
             }
         }
     }
@@ -36,7 +35,6 @@ export function MyNavbar() {
         setIsLoggedIn(!!token);
 
         // sprawdzamy czy uzytkownik jest administratorem
-
         checkAdmin();
     }, []);
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Container, Button, Alert, Spinner, Table, Image, Modal } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 
 // filozofia jest taka, że każdy użytkownik ma tylko jeden koszyk (o statusie otwartym) w bazie danych i tam w tabeli sa przechowywane ksiazki
@@ -11,6 +11,7 @@ function Koszyk(){
     const [loading, setLoading] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [showModal, setShowModal]=useState(false);
+    const navigate=useNavigate();
     // pobieranie zawartości koszyka
     /* useEffect jest uzywane do uruchomienia funkcji po pierwszym renderowaniu komponentu,
     poniewaz tablica zaleznosci jest pusta, efekt zostanie uruchomiony tylko raz, co dobrze
@@ -72,6 +73,7 @@ function Koszyk(){
             }
             const updatedCart = await response.json(); // Zaktualizowany koszyk
             setCart(updatedCart); // Ustawienie nowego koszyka
+            navigate(0); // po usunieciu przeladowuje strone, aby sie obrazki na nowo wczytaly
         } catch (error) {
             setError(error.message); // Ustawienie błędu w przypadku niepowodzenia
         } finally {
@@ -180,7 +182,11 @@ function Koszyk(){
                                     </td>
                                     <td className='text-center align-middle'>{item.tytul}</td>
                                     <td className='text-center align-middle'>{item.cena} zł</td>
-                                    <td className='text-center align-middle'>{item.ilosc}</td>
+                                    <td className='text-center align-middle'>
+                                        <Button variant="danger" className='me-3'>-</Button>
+                                        <span className='me-3'>{item.ilosc}</span>
+                                        <Button variant="success">+</Button>
+                                    </td>
                                     <td className='text-center align-middle'>{(item.cena * item.ilosc).toFixed(2)} zł</td>
                                     <td className='text-center align-middle'>
                                         <Button variant="danger" onClick={() => removeFromCart(item.book_id)} disabled={loading}>Usuń</Button>
