@@ -100,7 +100,9 @@ export function BookCard({ book }) {
           book.kategorie.map(kat => (kat+" "))
         }</p>
         <p className="card-text"><strong>Cena:</strong> {book.cena} zł</p>
-        <Button variant="primary" onClick={handleShow}>Dodaj do koszyka</Button>
+      </div>
+      <div className="text-center mb-4">
+        <Button variant="primary" onClick={handleShow} className="" >Dodaj do koszyka</Button>
       </div>
     </div>
     </>
