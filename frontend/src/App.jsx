@@ -10,6 +10,7 @@ import Koszyk from './Koszyk.jsx';
 import SearchResult from './SearchResult.jsx';
 import AllBooksPage from './AllBooksPage.jsx';
 import Admin from "./Admin.jsx";
+import ShoppingHistory from './ShoppingHistory.jsx';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="/searchresult" element={<SearchResult/>}/>
           <Route path="/allbookspage" element={<AllBooksPage/>}/>
           <Route path="/admin" element={<Admin/>}/>
+          <Route path="/shophistory" element={<ShoppingHistory/>}/>
         </Routes>
       </Router>
       

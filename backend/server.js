@@ -713,6 +713,54 @@ app.get('/api/isadmin', authenticateToken, async (req, res) => {
 });
 
 
+// endpoint do pobrania zamowien w trakcie realizacji
+app.get('/api/client/realizowane-zamowienia', authenticateToken, async (req, res) => {
+	try{
+		const user = await User.findById(req.user.userId);
+		if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+		const zamowienia=await Cart.aggregate([
+			{
+				$match: {
+					user_id: user._id,
+					status: "realizowane"
+				}
+			},
+			{
+				$unwind: "$ksiazki"
+			},
+			{
+				$group: {
+					_id: "$_id",
+					//user_id: {$first: "$user_id"},
+					//status: {$first: "$status"},
+					ksiazki: {$push: "$ksiazki"},
+					suma_subtotal: {$sum: "$ksiazki.subtotal"},
+					data_utworzenia: {$first: "$data_utworzenia"}
+				}
+			},
+			{
+				$project: {
+					_id: 1,
+					//user_id: 0,
+					ksiazki: 1,
+					//status: 0,
+					suma_subtotal: 1,
+					data_utworzenia: 1
+				}
+			}
+		]);
+		res.status(200).json(zamowienia);
+	} catch(err){
+		console.error(err);
+		res.status(500).json({ message: 'Błąd pobrania realizowanych zamowien' })
+	}
+});
+
+
+
+
+
+
 
 
 // Uruchomienie serwera

@@ -236,7 +236,16 @@ function Koszyk(){
 
         <div className='bg-dark text-white' style={{minHeight: '100vh'}}>
             <Container>
-                <h1 className="py-4">Twój Koszyk:</h1>
+                {/** 
+                <h1 className="py-4">Twój Koszyk:</h1> */}
+
+                <div className='d-flex justify-content-between w-100 py-4'>
+                    <h1>Twój Koszyk:</h1>
+                    {isLoggedIn ?
+                    <Link to="/shophistory" className="btn btn-outline-light d-flex align-items-center justify-content-center">Historia zamówień</Link>
+                    : null}
+                </div>
+                
 
                 {/* wyswietlenie alertu o potencjalnym problemie/bledzie */}
                 {error && <Alert variant="danger">{error}</Alert>}
