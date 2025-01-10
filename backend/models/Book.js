@@ -20,6 +20,8 @@ const bookSchema = new mongoose.Schema({
 		_id: false,
 		ilosc: { type: Number },
 		data_zamowienia: { type: Date },
+    kwota_przedrabatem : { type: Number },
+    rabat_procent: { type: Number },
 		kwota_zamowienia: { type: Number },
 		user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
     }

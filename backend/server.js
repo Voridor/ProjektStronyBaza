@@ -547,24 +547,72 @@ app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
       }
     }
 
-    // Jeśli wszystkie książki są dostępne, wykonaj zmiany
-    /*for (const item of cart.ksiazki) {
-	przed dodaniem do zamowien nalezy zapisac w zamowieniach rabat i kwote zamowienia po rabacie
-	rabat jest odliczany od kwoty kazdej ksiazki bo w sumie to i tak to samo co rabat od caloski koszyka
 
+	// wyznaczenie rabatu, aby go potem odbic z cen ksiazek
+	const rabat = await User.aggregate([
+		{
+			$match: { _id: user._id }
+		},
+		{
+			$lookup:{
+				from:"books",
+				localField: "_id",
+				foreignField: "zamowienia.user_id",
+				as: "user_orders"
+			}
+		},
+		{$unwind: "$user_orders"},
+		{$unwind: "$user_orders.zamowienia"},
+		{
+			$group:{
+				_id: "$_id",
+				wydana_kwota: {$sum: "$user_orders.zamowienia.kwota_zamowienia"}
+			}
+		},
+		{
+			$addFields:{
+				rabat:{
+					$switch: {
+						branches:[
+							{case:{$gt:["$wydana_kwota", 1000]},then:15},
+							{case:{$and:[{$gte:["$wydana_kwota", 200]},{$lte:["$wydana_kwota",1000]}]},then:8},
+							{case:{$and:[{$gte:["$wydana_kwota",125]},{$lt:["$wydana_kwota",200]}]},then:5}
+						],
+						default:0
+					}
+				}
+			}
+		},
+		{
+			$project:{
+				_id: 0,
+				wydana_kwota: 1,
+				rabat: 1
+			}
+		}
+		]);
+	if (!rabat){
+		return res.status(404).json({ message: 'Nie udało się wyznaczyć rabatu dla klienta.' });
+	}
 	
+    // Jeśli wszystkie książki są dostępne, wykonaj zmiany
+    for (const item of cart.ksiazki) {
+	  // pole kwota_zamowienia to kwota po uwzglednieniu rabatu
       const { book_id, ilosc, subtotal } = item;
       const book = await Book.findById(book_id);
+	  let kwotaPoRabat=subtotal*((100-rabat[0].rabat)/100);
       // dodajemy szczegoly zamowienia do pola zamowienia w ksiazce
 	  book.zamowienia.push({
 		ilosc: ilosc,
 		data_zamowienia: new Date(),
-		kwota_zamowienia: subtotal,
+		kwota_przedrabatem: subtotal,
+		rabat_procent: rabat[0].rabat,
+		kwota_zamowienia: kwotaPoRabat,
 		user_id: user._id
 	  });
       book.ilosc -= ilosc;
       await book.save();
-    }*/
+    }
     await Cart.updateOne({_id: cart._id },{$set: {status: "realizowane"}});
     res.status(200).json({ message: 'Zamówienie zostało złożone pomyślnie.' });
   } catch (err) {
