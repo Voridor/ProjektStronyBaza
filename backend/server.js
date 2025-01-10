@@ -351,6 +351,124 @@ app.post('/api/cart-add/:bookID', authenticateToken, async (req, res) => {
 });
 
 
+// endpoint do zmniejszania ilosci ksiazki o 1 w koszyku
+app.patch('/api/cart/zmniejsz-book/:bookID', authenticateToken, async (req, res) => {
+	const { bookID } = req.params;
+	try{
+		const user = await User.findById(req.user.userId);
+		if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+		let cart=await Cart.findOne(
+			{
+				user_id: user._id,
+				status: "otwarty",
+				"ksiazki.book_id": bookID
+			},
+			{
+				"ksiazki.$": 1
+			}
+		);
+		if(!cart || cart.ksiazki.length===0){
+			return res.status(404).json({ message: "Nie znaleziono książki w koszyku do zmniejszenia, lub użytkownik nie ma koszyka owtartego." });
+		}
+		const book=cart.ksiazki[0];
+		if(book.ilosc>1){
+			const newSubtotal=(book.ilosc-1)*book.cena;
+			const updatedCart=await Cart.findOneAndUpdate(
+				{
+					user_id: user._id,
+					status: "otwarty",
+					"ksiazki.book_id": bookID
+				},
+				{
+					$inc: { "ksiazki.$[elem].ilosc": -1 },
+					$set: { "ksiazki.$[elem].subtotal": newSubtotal }
+				},
+				{
+					arrayFilters: [{ "elem.book_id": new mongoose.Types.ObjectId(bookID) }],
+					new: true
+				}
+			);
+			if(!updatedCart){
+				throw new Error("Nie udalo sie zaktualizowac koszyka.");
+			}
+			return res.status(200).json(updatedCart); // zmniejszono ilosc, ale nie do 0 czyli nie usunieto ksiazki calkowicie
+		}
+		else{
+			const updatedCart=await Cart.findOneAndUpdate(
+				{
+					user_id: user._id,
+					status: "otwarty"
+				},
+				{
+					$pull: { "ksiazki": { book_id: new mongoose.Types.ObjectId(bookID) } }
+				},
+				{
+					new: true
+				}
+			);
+			if(!updatedCart){
+				throw new Error("Nie udalo sie zaktualizowac koszyka.");
+			}
+			return res.status(200).json(updatedCart); // zmniejszono ilosc, ale nie do 0 czyli nie usunieto ksiazki calkowicie
+		}
+	} catch(err){
+		console.log(err);
+		res.status(500).json({ message: "Nie udało się zmniejszyć ilości książki w koszyku." });
+	}
+});
+
+// endpoint do zwiekszana ilosci ksiazki o 1 w koszyku
+app.patch('/api/cart/zwieksz-book/:bookID', authenticateToken, async(req, res) => {
+	const { bookID } = req.params;
+	try{
+		const user=await User.findById(req.user.userId);
+		if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+		const cart=await Cart.findOne(
+			{
+			user_id: user._id,
+			status: "otwarty",
+			"ksiazki.book_id": bookID 
+			},
+			{
+				"ksiazki.$": 1 // ta .$ daje to ze dostaniemy tylko ksiazke, ktora spelnia warunki wyszukiwania
+			}
+		);
+		if(!cart || cart.ksiazki.length===0){
+			return res.status(404).json({ message: "Nie znaleziono książki w koszyku do zmniejszenia, lub użytkownik nie ma koszyka owtartego." });
+		}
+		const book=cart.ksiazki[0];
+		const newSubtotal = (book.ilosc+1) * book.cena;
+		const updatedCart=await Cart.findOneAndUpdate(
+			{
+				user_id: user._id,
+				status: "otwarty",
+				"ksiazki.book_id": bookID
+			},
+			{
+				$inc: { "ksiazki.$[elem].ilosc": 1 },
+				$set: { "ksiazki.$[elem].subtotal": newSubtotal }
+			},
+			{
+				arrayFilters: [{ "elem.book_id": new mongoose.Types.ObjectId(bookID) }],
+				new: true
+			}
+		);
+		if(!updatedCart){
+			throw new Error("Nie udalo sie zaktualizowac koszyka.");
+		}
+		res.status(200).json(updatedCart);
+	} catch(err){
+		console.log(err);
+		res.status(500).json({ message: "Nie udało się zwiększyć ilości książki w koszyku." })
+	}
+});
+
+
+
+
+
+
+
 // endpoint do zamawiania, czyli zmieniemay stan koszyka na zamkniety i dodajemy informacje
 // o zamowieniu do kolekcji books (wewnątrz kolekcji tablica zamowienia)
 /*
@@ -431,6 +549,10 @@ app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
 
     // Jeśli wszystkie książki są dostępne, wykonaj zmiany
     /*for (const item of cart.ksiazki) {
+	przed dodaniem do zamowien nalezy zapisac w zamowieniach rabat i kwote zamowienia po rabacie
+	rabat jest odliczany od kwoty kazdej ksiazki bo w sumie to i tak to samo co rabat od caloski koszyka
+
+	
       const { book_id, ilosc, subtotal } = item;
       const book = await Book.findById(book_id);
       // dodajemy szczegoly zamowienia do pola zamowienia w ksiazce
@@ -455,16 +577,19 @@ app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
 /* endpoint do pobierania rabatu dla klienta
 obliczany jest na podstawie łącznej kwoty wydanej na zamowienia(pole/tablica w kolekcji books)
 */
-//app.get('/api/klient-rabat', authenticateToken, async (req, res) => {
-app.get('/api/klient-rabat', async (req, res) => {
+app.get('/api/klient-rabat', authenticateToken, async (req, res) => {
+//app.get('/api/klient-rabat', async (req, res) => {
   try {
 	// pobieranie danych użytkownika z bazy na podstawie jego ID (które jest w tokenie)
-    //const user = await User.findById(req.user.userId);
-	const user = await User.find({ login: "test" });
+    const user = await User.findById(req.user.userId);
+	//const user = await User.find({ login: "test" });
     if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
 	
-	// agregacja ponizej policzy nam rabat 
+	// agregacja ponizej policzy nam rabat dla konkretnego uzytkownika
 	const rabat = await User.aggregate([
+	{
+		$match: { _id: user._id }
+	},
 	{
 		$lookup:{
 			from:"books",
@@ -530,7 +655,9 @@ app.get('/api/isadmin', authenticateToken, async (req, res) => {
 			res.status(200).json({ message: 'Użytkownik jest administratorem.' });
 		} 
 		else {
-			res.status(403).json({ message: 'Użytkownik nie jest administratorem.' }); 
+			//res.status(403).json({ message: 'Użytkownik nie jest administratorem.' }); 
+			// teraz nie ma errror w konsoli przegladarki
+			res.status(222).json({ message: null });
 		}
 	} catch (err){
 		res.status(500).json({ message: 'Wystąpił błąd podczas sprawdzania uprawnień.' });

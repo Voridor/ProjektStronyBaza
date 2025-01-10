@@ -20,9 +20,11 @@ export function MyNavbar() {
                     method: 'GET',
                     headers: {'Authorization': `Bearer ${token}`,},
                 });
-                // handle response here
                 if (response.ok) {
-                    setIsAdministrator(true);
+                    if(response.message!=null){
+                        setIsAdministrator(true);
+                    }
+                    // setIsAdministrator(true); byl error w tym przypadku w konsoli przegladarki
                 }
             } catch (error) {
                 console.error('Błąd sprawdzania czy admin:', error.message);
