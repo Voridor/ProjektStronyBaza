@@ -710,7 +710,7 @@ app.get('/api/isadmin', authenticateToken, async (req, res) => {
 	try {
 		const user = await User.findById(userid);
 		if (!user) {
-			return res.status(404).json({ message: 'Użytkownik nie znaleziony' })
+			return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
 		};
 		if(user.rola=="Admin"){
 			res.status(200).json({ message: 'Użytkownik jest administratorem.' });
@@ -826,10 +826,34 @@ app.get('/api/client/realizowane-zamowienia', authenticateToken, async (req, res
 });
 
 
+// endpoint do dodawania nowej ksiazki do bazy
+app.post('/api/admin/add-book', authenticateToken, async (req, res) => {
+	try{
+		const user = await User.findById(req.user.userId);
+		if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+		const newBook=new Book(req.body);
+		const savedBook=await newBook.save();
+		res.status(201).json(savedBook);
+	} catch(err){
+		console.error(err);
+		res.status(500).json({ message: "Błąd dodawania ksiązki do bazy." });
+	}
+});
 
 
-
-
+// endpoint do usuwania ksiazki z bazy
+app.delete('/api/admin/del-book/:id', authenticateToken, async (req, res) => {
+	try{
+		const { id } = req.params;
+		const user = await User.findById(req.user.userId);
+		if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+		await Book.deleteOne({_id: id});
+		res.status(200).json({ message: 'Książka została usunięta.' });
+	} catch(error){
+		console.log(error);
+		res.status(500).json({ message: 'Błąd podczas usuwania książki.' });
+	}
+});
 
 
 // Uruchomienie serwera

@@ -2,10 +2,11 @@ const mongoose = require('mongoose');
 
 // Schemat ksiazki
 const bookSchema = new mongoose.Schema({
-  _id: { type: mongoose.Schema.Types.ObjectId, required: true },
+  //_id: { type: mongoose.Schema.Types.ObjectId },
   tytul: { type: String, required: true },
   autorzy: [
     {
+      _id: false,
       imie: { type: String, required: true },
       nazwisko: { type: String, required: true }
     }
