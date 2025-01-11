@@ -28,9 +28,6 @@ function ShoppingHistory(){
                 }
                 const data=await response.json();
                 setRealiZamow(data);
-
-                console.log(data);
-
             } catch(error){
                 setError(error.message);
             } finally{
@@ -44,7 +41,7 @@ function ShoppingHistory(){
     },[]);
 
 
-    const [activeKey, setActiveKey] = useState(null);
+    const [activeKey, setActiveKey] = useState(null); // to rozwijanych accordiconow
     const handleAccordionClick = (key) => {
         // Przełączanie aktywnego klucza (rozwiń lub zwijaj)
         setActiveKey(activeKey === key ? null : key);
@@ -56,7 +53,7 @@ function ShoppingHistory(){
         <>
         <div className='bg-dark text-white' style={{minHeight: '100vh'}}>
             <Container>
-                <h2 className="py-4">Twoje realizowane zamówienia:</h2>
+                <h2 className="py-4">Twoje zamówienia:</h2>
 
                 {error && <Alert variant="danger">{error}</Alert>}
 
@@ -71,24 +68,29 @@ function ShoppingHistory(){
                         {realiZamow.map((item, index)=>{
                             return(
                                 <Accordion.Item key={item._id} eventKey={String(index)} onClick={() => handleAccordionClick(String(index))}>
-                                    <Accordion.Header>Data wykonania zamówienia: {new Date(item.data_utworzenia).getDate()}.{new Date(item.data_utworzenia).getMonth()+1}.{new Date(item.data_utworzenia).getFullYear()}</Accordion.Header>
+                                    <Accordion.Header>Data złożenia zamówienia: {new Date(item.data_utworzenia).getDate()}.{new Date(item.data_utworzenia).getMonth()+1}.{new Date(item.data_utworzenia).getFullYear()} {new Date(item.data_utworzenia).getUTCHours()}:{new Date(item.data_utworzenia).getUTCMinutes()} Status zamówienia: {item.status}</Accordion.Header>
                                     <Accordion.Body>
                                     <Table striped bordered hover>
                                         <thead>
                                             <tr className="text-center">
-                                                <th>Zdjęcie okładki:</th>
                                                 <th>Tytuł:</th>
                                                 <th>Cena za sztukę:</th>
                                                 <th>Ilość:</th>
                                                 <th>Cena łączna:</th>
-                                                <th>Opcja:</th>
+                                                <th>Cena po rabacie:</th>
+                                                <th>Status:</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {item.ksiazki.map(book=>{
                                                 return(
                                                 <tr key={book.book_id}>
+                                                    <td className="text-center align-middle">{book.tytul}</td>
+                                                    <td className="text-center align-middle">{book.cena}</td>
                                                     <td className="text-center align-middle">{book.ilosc}</td>
+                                                    <td className="text-center align-middle">{book.subtotal}</td>
+                                                    <td className="text-center align-middle">{book.subtotal_porabacie}</td>
+                                                    <td className="text-center align-middle">{item.status}</td>
                                                 </tr>
                                                 )
                                             })}
@@ -104,13 +106,9 @@ function ShoppingHistory(){
                     </>
                 ) : (<Alert variant="info">Twoja historia zamówień jest pusta</Alert>))
                 : <Alert variant="info">Nie jesteś zalogowany.</Alert>}
-
-
-                {/* dodac zamowienia juz zrealizowane */}
-
-
-
-                <Link to="/koszyk" className="btn btn-outline-light w-100 mt-4 fw-bold mb-4">Powrót do koszyka</Link>
+                {/* przyciski do powrotu na strone glowna i do koszyka */}
+                <Link to="/koszyk" className="btn btn-outline-light w-100 mt-4 fw-bold mb-3">Powrót do koszyka</Link>
+                <Link to="/" className="btn btn-outline-light w-100 fw-bold mb-4">Powrót do strony głównej</Link>
             </Container>
         </div>
         </>

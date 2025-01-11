@@ -235,7 +235,8 @@ app.get('/api/cart', authenticateToken, async (req, res) => {
     if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
 	const cart = await Cart.findOne({ user_id: user._id, status: "otwarty" }).populate('ksiazki.book_id');
 	if(!cart){
-		return res.status(404).json({ message: 'Koszyk nie znaleziony' });
+		return res.status(200).json({}); // zwracamy pusty obiekt i unikamy errora
+		//return res.status(404).json({ message: 'Koszyk nie znaleziony' }); to powodowalo error w konsoli przeglaraki, gdy koszyk byl pusty
 	}
 	
 	// przygotowanie odpowiedzi z informacjami o książkach w koszyku
@@ -600,7 +601,7 @@ app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
 	  // pole kwota_zamowienia to kwota po uwzglednieniu rabatu
       const { book_id, ilosc, subtotal } = item;
       const book = await Book.findById(book_id);
-	  let kwotaPoRabat=subtotal*((100-rabat[0].rabat)/100);
+	  let kwotaPoRabat=(subtotal*((100-rabat[0].rabat)/100)).toFixed(2);
       // dodajemy szczegoly zamowienia do pola zamowienia w ksiazce
 	  book.zamowienia.push({
 		ilosc: ilosc,
@@ -612,6 +613,18 @@ app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
 	  });
       book.ilosc -= ilosc;
       await book.save();
+	  // dodajemy do koszyka cene po rabacie, jaka zaplacilismy za dana ksiazke
+	  await Cart.updateOne(
+		{
+			_id: cart._id,
+			"ksiazki.book_id": book_id
+		},
+		{
+			$set: {
+				"ksiazki.$.subtotal_porabacie": kwotaPoRabat
+			}
+		}
+	  );
     }
     await Cart.updateOne({_id: cart._id },{$set: {status: "realizowane"}});
     res.status(200).json({ message: 'Zamówienie zostało złożone pomyślnie.' });
@@ -713,11 +726,67 @@ app.get('/api/isadmin', authenticateToken, async (req, res) => {
 });
 
 
-// endpoint do pobrania zamowien w trakcie realizacji
+// endpoint do pobrania zamowien w trakcie realizacji i tych zrealizowanych
 app.get('/api/client/realizowane-zamowienia', authenticateToken, async (req, res) => {
 	try{
 		const user = await User.findById(req.user.userId);
 		if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+		const zamowienia=await Cart.aggregate([
+			{
+				$match: {
+					user_id: user._id,
+					status: {$ne: "otwarty"}
+				}
+			},
+			{
+				$unwind: "$ksiazki"
+			},
+			{
+				$lookup: {
+					from: "books",
+					localField: "ksiazki.book_id",
+					foreignField: "_id",
+					as: "dane_ksiazki"
+				}
+			},
+			{
+				$unwind: "$dane_ksiazki"
+			},
+			{
+				$group: {
+					_id: "$_id",
+					//user_id: {$first: "$user_id"},
+					status: {$first: "$status"},
+					ksiazki: {
+						$push: {
+							book_id: "$ksiazki.book_id",
+							tytul: "$dane_ksiazki.tytul",
+							ilosc: "$ksiazki.ilosc",
+							cena: "$ksiazki.cena",
+							subtotal: "$ksiazki.subtotal",
+							subtotal_porabacie: "$ksiazki.subtotal_porabacie"
+						}
+					},
+					suma_subtotal: {$sum: "$ksiazki.subtotal_porabacie"},
+					data_utworzenia: {$first: "$data_utworzenia"}
+				}
+			},
+			{
+				$sort: {data_utworzenia: -1} // sortowanie po dacie(najnowsze na poczatku)
+			},
+			{
+				$project: {
+					_id: 1,
+					//user_id: 0,
+					ksiazki: 1,
+					status: 1,
+					suma_subtotal: 1,
+					data_utworzenia: 1
+				}
+			}
+		]);
+		
+		/*
 		const zamowienia=await Cart.aggregate([
 			{
 				$match: {
@@ -748,7 +817,7 @@ app.get('/api/client/realizowane-zamowienia', authenticateToken, async (req, res
 					data_utworzenia: 1
 				}
 			}
-		]);
+		]); */
 		res.status(200).json(zamowienia);
 	} catch(err){
 		console.error(err);

@@ -9,7 +9,8 @@ const cartSchema = new mongoose.Schema({
 		book_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Book' },
 		ilosc: { type: Number },
 		cena: { type: Number },
-		subtotal: { type: Number }
+		subtotal: { type: Number },
+		subtotal_porabacie: { type: Number }
 	}],
 	data_utworzenia: { type: Date },
 	status: { type: String }

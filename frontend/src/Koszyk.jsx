@@ -236,9 +236,6 @@ function Koszyk(){
 
         <div className='bg-dark text-white' style={{minHeight: '100vh'}}>
             <Container>
-                {/** 
-                <h1 className="py-4">Twój Koszyk:</h1> */}
-
                 <div className='d-flex justify-content-between w-100 py-4'>
                     <h1>Twój Koszyk:</h1>
                     {isLoggedIn ?
