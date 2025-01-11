@@ -639,7 +639,6 @@ app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
 obliczany jest na podstawie łącznej kwoty wydanej na zamowienia(pole/tablica w kolekcji books)
 */
 app.get('/api/klient-rabat', authenticateToken, async (req, res) => {
-//app.get('/api/klient-rabat', async (req, res) => {
   try {
 	// pobieranie danych użytkownika z bazy na podstawie jego ID (które jest w tokenie)
     const user = await User.findById(req.user.userId);
@@ -785,39 +784,6 @@ app.get('/api/client/realizowane-zamowienia', authenticateToken, async (req, res
 				}
 			}
 		]);
-		
-		/*
-		const zamowienia=await Cart.aggregate([
-			{
-				$match: {
-					user_id: user._id,
-					status: "realizowane"
-				}
-			},
-			{
-				$unwind: "$ksiazki"
-			},
-			{
-				$group: {
-					_id: "$_id",
-					//user_id: {$first: "$user_id"},
-					//status: {$first: "$status"},
-					ksiazki: {$push: "$ksiazki"},
-					suma_subtotal: {$sum: "$ksiazki.subtotal"},
-					data_utworzenia: {$first: "$data_utworzenia"}
-				}
-			},
-			{
-				$project: {
-					_id: 1,
-					//user_id: 0,
-					ksiazki: 1,
-					//status: 0,
-					suma_subtotal: 1,
-					data_utworzenia: 1
-				}
-			}
-		]); */
 		res.status(200).json(zamowienia);
 	} catch(err){
 		console.error(err);
@@ -841,6 +807,28 @@ app.post('/api/admin/add-book', authenticateToken, async (req, res) => {
 });
 
 
+// endpoint do edycji ksiazki w bazie
+app.put('/api/admin/update-book/:id', authenticateToken, async (req, res) => {
+	try{
+		const user = await User.findById(req.user.userId);
+		if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+		const { id } = req.params;
+		const upgradedBook=await Book.findOneAndUpdate(
+			{
+				_id: id
+			},
+			req.body,
+			{
+				new: true
+			}
+		);
+		res.status(200).json(upgradedBook);
+	} catch(err){
+		console.error(err);
+		res.status(500).json({ message: "Błąd edycji książki w bazie." });
+	}
+});
+
 // endpoint do usuwania ksiazki z bazy
 app.delete('/api/admin/del-book/:id', authenticateToken, async (req, res) => {
 	try{
@@ -854,6 +842,59 @@ app.delete('/api/admin/del-book/:id', authenticateToken, async (req, res) => {
 		res.status(500).json({ message: 'Błąd podczas usuwania książki.' });
 	}
 });
+
+
+// endpoint do zwracania top 3 kupujących ksiazki
+app.get('/api/admin/top-kupujacy', async (req, res) => {
+	try {
+	  // agregacja ponizej policzy ile kto wydal i zwróci listę
+	  const topka = await User.aggregate([
+	  {
+		  $lookup:{
+			  from:"books",
+			  localField: "_id",
+			  foreignField: "zamowienia.user_id",
+			  as: "user_orders"
+		  }
+	  },
+	  {$unwind: "$user_orders"},
+	  {$unwind: "$user_orders.zamowienia"},
+	  {
+		  $group:{
+			  _id: "$_id",
+			  login: { $first: "$login" },
+			  imie: { $first: "$imie" },
+			  nazwisko: { $first: "$nazwisko" },
+			  email: { $first: "$email" },
+			  wydana_kwota: {$sum: "$user_orders.zamowienia.kwota_zamowienia"}
+		  }
+	  },
+	  {
+		  $project:{
+			  _id: 1,
+			  login: 1,
+			  imie: 1,
+			  nazwisko: 1,
+			  email: 1,
+			  wydana_kwota: 1
+		  }
+	  },
+	  {
+		$sort: { wydana_kwota: -1 }
+	  },
+	  {
+		$limit: 3
+	  }
+	  ]);
+	  if (!topka){
+		return res.status(404).json({ message: 'Nie udało się wyznaczyć topki kupujacych.' });
+	  }
+	  res.status(200).json(topka);
+	} catch (err){
+	  console.log(err);
+	  res.status(500).json({ message: "Błąd w api top listy kupujacych." });
+	}
+  });
 
 
 // Uruchomienie serwera

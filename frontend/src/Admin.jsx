@@ -8,7 +8,6 @@ function Admin() {
     const [isAdministrator, setIsAdministrator] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    
 
     // funkcja do sprawdzenia czy uzytkownik to admin, bo jak nie to nie powinien widziec tej strony
     const checkAdmin = async () => {
@@ -21,7 +20,7 @@ function Admin() {
                     headers: {'Authorization': `Bearer ${token}`,},
                 });
                 if (response.ok) {
-                    if(response.statusText!=200){
+                    if(response.status==200){
                         setIsAdministrator(true);
                     }
                     // mozna zrobic, ze gdy nie admin to przekierowujemy na strone glowna
@@ -42,11 +41,6 @@ function Admin() {
     }, []);
 
 
-    
-
-
-
-
     return(
         <>
         <div className='bg-dark text-white' style={{minHeight: '100vh'}}>
@@ -58,13 +52,10 @@ function Admin() {
             </div>
             : 
             <>
-            <div className='d-flex justify-content-between w-100 py-4'>
-                <h1 className=''>Panel Administracyjny</h1>
-                <Link to="/" className="btn btn-outline-light d-flex align-items-center justify-content-center">Strona główna</Link>
-            </div>
-            
-            <Link to="/" className="btn btn-outline-light ">Strona główna</Link>
             <h1 className='text-white text-center py-3'>Panel Administracyjny</h1>
+            <div className="d-flex justify-content-center">
+                <Link to="/" className="btn btn-outline-light w-25">Strona główna</Link>
+            </div>
             <Container fluid className="px-4">
                 <h2 className='pb-2'>Dostępne opcje:</h2>
                 <Tabs defaultActiveKey="addBook" id="admin-panel-tabs" className="mb-3">
@@ -293,6 +284,19 @@ const ViewBooksSection = () => {
     const [error, setError] = useState(null);
     const [showModal, setShowModal]=useState(false);
     const [ksiazkaID, setKsiazkaID]=useState(null);
+    const [showModal2, setshowModal2] = useState(false);
+    const [bookToEdit, setBookToEdit] = useState(null);
+    const [updatedBook, setUpdatedBook] = useState({
+        tytul: '',
+        kategorie: '',
+        autorzy: '',
+        cena: '',
+        ilosc: '',
+        isbn: '',
+        data_wydania: '',
+        okladka_adres: ''
+    });
+
 
     useEffect(()=>{
         const fetchAllBoks=async()=>{
@@ -352,8 +356,178 @@ const ViewBooksSection = () => {
     };
 
 
+    const handleEdit = (id) => {
+        const book = AllBoks.find(book => book._id === id);
+        setBookToEdit(book);
+        setUpdatedBook({
+            tytul: book.tytul,
+            kategorie: book.kategorie.join(', '), // konwertowanie tablicy na stringa z odzielajacym przecinkiem kategorie
+            autorzy: book.autorzy.map(autor => `${autor.imie} ${autor.nazwisko}`).join(', '),
+            cena: book.cena,
+            ilosc: book.ilosc,
+            isbn: book.isbn,
+            data_wydania: new Date(book.data_wydania).toISOString().split('T')[0], // format daty yyyy-mm-dd
+            okladka_adres: book.okladka_adres
+        });
+
+        setshowModal2(true);
+    };
+
+
+    const handleCloseModal = () => {
+        setshowModal2(false);
+        setUpdatedBook({
+            tytul: '',
+            kategorie: '',
+            autorzy: '',
+            cena: '',
+            ilosc: '',
+            isbn: '',
+            data_wydania: '',
+            okladka_adres: ''
+        });
+    };
+
+
+    const handleSaveChanges = async () => {
+        const { tytul, kategorie, autorzy, cena, ilosc, isbn, data_wydania, okladka_adres } = updatedBook;
+        const processedAutorzy = autorzy
+        .split(',') // Podziel na autorów przy przecinkach
+        .map(autor => autor.trim()) // Usuń spacje na początku i końcu każdego elementu
+        .map(autor => {
+            const [imie, nazwisko] = autor.split(' '); // Podziel imię i nazwisko
+            return { imie, nazwisko };
+        });
+        
+        const updatedBookData = {
+            tytul,
+            kategorie: kategorie.split(',').map(kat => kat.trim()),
+            autorzy: processedAutorzy,
+            cena,
+            ilosc,
+            isbn,
+            data_wydania,
+            okladka_adres
+        };
+
+        const token = localStorage.getItem('token');
+        setLoading(true);
+        try {
+            const response = await fetch(`http://localhost:5000/api/admin/update-book/${bookToEdit._id}`, {
+                method: 'PUT',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify(updatedBookData)
+            });
+            if (!response.ok) {
+                throw new Error('Błąd podczas edytowania książki.');
+            }
+            const data = await response.json();
+            setAllBooks(prevBooks =>
+                prevBooks.map(book => book._id === bookToEdit._id ? data : book)
+            );
+        } catch (error) {
+            setError(error.message);
+        } finally{
+            setLoading(false);
+            handleCloseModal();
+        }
+    };
+
+
     return (
         <>
+        {/*modal do edycji ksiazki w bazie*/}
+        <Modal show={showModal2} onHide={handleCloseModal}>
+            <Modal.Header closeButton>
+                <Modal.Title>Edytuj książkę</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                <Form>
+                    <Form.Group controlId="formTytul">
+                        <Form.Label>Tytuł</Form.Label>
+                        <Form.Control
+                            type="text"
+                            value={updatedBook.tytul}
+                            onChange={(e) => setUpdatedBook({ ...updatedBook, tytul: e.target.value })}
+                        />
+                    </Form.Group>
+
+                    <Form.Group controlId="formKategorie">
+                        <Form.Label>Kategorie</Form.Label>
+                        <Form.Control
+                            type="text"
+                            value={updatedBook.kategorie}
+                            onChange={(e) => setUpdatedBook({ ...updatedBook, kategorie: e.target.value })}
+                        />
+                    </Form.Group>
+
+                    <Form.Group controlId="formAutorzy">
+                        <Form.Label>Autorzy</Form.Label>
+                        <Form.Control
+                            type="text"
+                            value={updatedBook.autorzy}
+                            onChange={(e) => setUpdatedBook({ ...updatedBook, autorzy: e.target.value })}
+                        />
+                    </Form.Group>
+
+                    <Form.Group controlId="formCena">
+                        <Form.Label>Cena</Form.Label>
+                        <Form.Control
+                            type="number"
+                            value={updatedBook.cena}
+                            onChange={(e) => setUpdatedBook({ ...updatedBook, cena: e.target.value })}
+                        />
+                    </Form.Group>
+
+                    <Form.Group controlId="formIlosc">
+                        <Form.Label>Ilość</Form.Label>
+                        <Form.Control
+                            type="number"
+                            value={updatedBook.ilosc}
+                            onChange={(e) => setUpdatedBook({ ...updatedBook, ilosc: e.target.value })}
+                        />
+                    </Form.Group>
+
+                    <Form.Group controlId="formIsbn">
+                        <Form.Label>ISBN</Form.Label>
+                        <Form.Control
+                            type="text"
+                            value={updatedBook.isbn}
+                            onChange={(e) => setUpdatedBook({ ...updatedBook, isbn: e.target.value })}
+                        />
+                    </Form.Group>
+
+                    <Form.Group controlId="formDataWydania">
+                        <Form.Label>Data Wydania</Form.Label>
+                        <Form.Control
+                            type="date"
+                            value={updatedBook.data_wydania}
+                            onChange={(e) => setUpdatedBook({ ...updatedBook, data_wydania: e.target.value })}
+                        />
+                    </Form.Group>
+
+                    <Form.Group controlId="formOkladka">
+                        <Form.Label>Link do Okładki</Form.Label>
+                        <Form.Control
+                            type="text"
+                            value={updatedBook.okladka_adres}
+                            onChange={(e) => setUpdatedBook({ ...updatedBook, okladka_adres: e.target.value })}
+                        />
+                    </Form.Group>
+                </Form>
+            </Modal.Body>
+            <Modal.Footer>
+                <Button variant="secondary" onClick={handleCloseModal}>Zamknij</Button>
+                <Button variant="primary" onClick={()=>handleSaveChanges()}>Zapisz zmiany</Button>
+            </Modal.Footer>
+        </Modal>
+
+
+
+        {/* modal do usuwania ksiazki z bazy */}
         <Modal show={showModal} onHide={handleClose}>
             <Modal.Header closeButton>
                 <Modal.Title>Komunikat</Modal.Title>
@@ -406,7 +580,7 @@ const ViewBooksSection = () => {
                             <td>{new Date(book.data_wydania).getUTCDate()}.{new Date(book.data_wydania).getUTCMonth()+1}.{new Date(book.data_wydania).getFullYear()}</td>
                             <td>{book.okladka_adres}</td>
                             <td>
-                            <Button variant="warning" size="sm" className="me-2">Edytuj</Button>
+                            <Button variant="warning" size="sm" className="me-2" onClick={()=>handleEdit(book._id)}>Edytuj</Button>
                             <Button variant="danger" size="sm" onClick={()=>handleShow(book._id)}>Usuń</Button>
                             </td>
                         </tr>
@@ -421,41 +595,72 @@ const ViewBooksSection = () => {
 };
 
 const TopBuyersSection = () => {
-    return (
-        <div>
-        <h4>Top 3 kupujących</h4>
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [topka, setTopka] = useState([]);
+
+    useEffect(()=>{
+        const fetchTopka=async()=>{
+            setLoading(true);
+            setError(null);
+            try{
+                const response=await fetch('http://localhost:5000/api/admin/top-kupujacy', {
+                    method: 'GET'
+                });
+                if(!response.ok){
+                    throw new Error('Błąd pobrania topki kupujacych.');
+                }
+                const data=await response.json();
+                setTopka(data);
+            } catch(error){
+                setError(error.message);
+            } finally{
+                setLoading(false);
+            }
+        };
+
+        fetchTopka();
+    },[]);
+
+
+
+    return(
+        <>
+        {error ? <Alert variant="danger">{error}</Alert> : (
+        loading ? (
+        <div className="text-center">
+            <Spinner animation="border" variant="primary"></Spinner>
+        </div>) : (
+        <div className='pb-3'>
+        <h4 className='text-center py-2'>Top 3 kupujących</h4>
         <Table striped bordered hover>
             <thead>
-            <tr>
-                <th>#</th>
-                <th>Imię i nazwisko</th>
-                <th>Liczba zamówień</th>
-                <th>Wartość zamówień</th>
-            </tr>
+                <tr>
+                    <th>#</th>
+                    <th>Login</th>
+                    <th>Imię</th>
+                    <th>Nazwisko</th>
+                    <th>Email</th>
+                    <th>Wydana kwota</th>
+                </tr>
             </thead>
             <tbody>
-            {/* Przykładowe dane */}
-            <tr>
-                <td>1</td>
-                <td>Jan Kowalski</td>
-                <td>10</td>
-                <td>1000 zł</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>Anna Nowak</td>
-                <td>8</td>
-                <td>800 zł</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>Piotr Wiśniewski</td>
-                <td>5</td>
-                <td>500 zł</td>
-            </tr>
+                {topka.map((item, index)=>{
+                    return(
+                        <tr key={item._id}>
+                            <td>{index+1}</td>
+                            <td>{item.login}</td>
+                            <td>{item.imie}</td>
+                            <td>{item.nazwisko}</td>
+                            <td>{item.email}</td>
+                            <td>{item.wydana_kwota}</td>
+                        </tr>
+                    )
+                })}
             </tbody>
         </Table>
-        </div>
+        </div> ))}
+        </>
     );
 };
 

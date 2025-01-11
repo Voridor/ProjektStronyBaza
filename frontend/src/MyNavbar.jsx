@@ -21,7 +21,7 @@ export function MyNavbar() {
                     headers: {'Authorization': `Bearer ${token}`,},
                 });
                 if (response.ok) {
-                    if(response.statusText!=200){
+                    if(response.status==200){
                         setIsAdministrator(true);
                     }
                     // setIsAdministrator(true); byl error w tym przypadku w konsoli przegladarki

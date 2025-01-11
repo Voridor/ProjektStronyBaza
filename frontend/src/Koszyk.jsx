@@ -51,9 +51,11 @@ function Koszyk(){
 
         if(!!token === true){ // wykona sie tylko gdy uzytkownik jest zalogowany
             fetchCart(); // wywolanie funkcji, która pobiera dane koszyka
-            dawajRabat();
+            if(cart.length>0){
+                dawajRabat();
+            }
         }
-    }, []);
+    }, [cart.length]);
 
 
 
