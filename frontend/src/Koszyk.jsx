@@ -183,7 +183,12 @@ function Koszyk(){
                 throw new Error('Nie udało się pobrać rabatu.');
             }
             const wielkoscRabatu=await response.json();
-            setRabatProcent(wielkoscRabatu[0].rabat);
+            if(wielkoscRabatu.length==0){
+                setRabatProcent(0);
+            }
+            else{
+                setRabatProcent(wielkoscRabatu[0].rabat);
+            }
         } catch(error){
             setError(error.message);
         }

@@ -24,7 +24,8 @@ const bookSchema = new mongoose.Schema({
     kwota_przedrabatem : { type: Number },
     rabat_procent: { type: Number },
 		kwota_zamowienia: { type: Number },
-		user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+		user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    cart_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Cart' } // nowiutkie
     }
   ],
   okladka_adres: { type: String, required: true },

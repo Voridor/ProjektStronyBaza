@@ -550,7 +550,7 @@ app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
 
 
 	// wyznaczenie rabatu, aby go potem odbic z cen ksiazek
-	const rabat = await User.aggregate([
+	let rabat = await User.aggregate([
 		{
 			$match: { _id: user._id }
 		},
@@ -595,6 +595,9 @@ app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
 	if (!rabat){
 		return res.status(404).json({ message: 'Nie udało się wyznaczyć rabatu dla klienta.' });
 	}
+	if(rabat.length==0){
+		rabat=[{wydana_kwota: 0, rabat: 0}];
+	}
 	
     // Jeśli wszystkie książki są dostępne, wykonaj zmiany
     for (const item of cart.ksiazki) {
@@ -609,7 +612,8 @@ app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
 		kwota_przedrabatem: subtotal,
 		rabat_procent: rabat[0].rabat,
 		kwota_zamowienia: kwotaPoRabat,
-		user_id: user._id
+		user_id: user._id,
+		cart_id: cart._id // nowiutkie
 	  });
       book.ilosc -= ilosc;
       await book.save();
