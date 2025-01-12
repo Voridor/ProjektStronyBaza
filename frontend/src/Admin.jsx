@@ -743,6 +743,27 @@ const ViewOrdersSection = () => {
         }
     };
 
+    const anulujZamow=async(orderId)=>{
+        const token=localStorage.getItem('token');
+        setLoading(true);
+        setError(null);
+        try{
+            const response=await fetch(`http://localhost:5000/api/admin/anuluj/zamow/${orderId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                }
+            });
+            if(!response.ok){
+                throw new Error('Błąd anulowania zamówienia.');
+            }
+            navigate(0);
+        } catch(error){
+            setError(error.message);
+        } finally{
+            setLoading(false);
+        }
+    };
 
     return (
         <>
@@ -779,6 +800,7 @@ const ViewOrdersSection = () => {
                                 <td>{new Date(order.data_utworzenia).getUTCDate()}.{new Date(order.data_utworzenia).getUTCMonth()+1}.{new Date(order.data_utworzenia).getFullYear()}</td>
                                 <td>{order.status}</td>
                                 <td><Button variant="success" onClick={() => oznaczZamZreal(order._id)}>Oznacz jako zrealizowane </Button></td>
+                                <td><Button variant="danger" onClick={() => anulujZamow(order._id)}>Anuluj zamowienie</Button></td>
                             </tr>
                         ))}
                     </tbody>

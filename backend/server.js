@@ -613,7 +613,7 @@ app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
 		rabat_procent: rabat[0].rabat,
 		kwota_zamowienia: kwotaPoRabat,
 		user_id: user._id,
-		cart_id: cart._id // nowiutkie
+		cart_id: cart._id
 	  });
       book.ilosc -= ilosc;
       await book.save();
@@ -1010,6 +1010,42 @@ app.post('/api/admin/oznacz/zrealiz/:id', authenticateToken, async(req, res)=>{
 });
 
 
+// endpoint do anulowania zamówienia
+app.post('/api/admin/anuluj/zamow/:id', authenticateToken, async(req, res)=>{
+	try{
+		const user = await User.findById(req.user.userId);
+		if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+		const orderID=req.params.id;
+		const cart=await Cart.findById(orderID); // pobieramy koszyk z odpowiednim zamowieniem
+		if(!cart){
+			return res.status(404).json({message:"Zamownienie nie zostalo znalezione."});
+		}
+		// zmiana statusu zamowienia/koszyka na anulowane
+		cart.status="anulowane";
+		await cart.save();
+
+		// usuwanie zamowienia z tablicy zawowien w kolekcji books i zmiana ilosci
+		for(const item of cart.ksiazki){
+			const bookId=item.book_id;
+			const quantity=item.ilosc;
+			await Book.updateOne(
+				{
+					_id: bookId
+				},
+				{
+					$pull: {
+						"zamowienia": {cart_id: orderID}
+					},
+					$inc: { "ilosc": quantity }
+				}
+			);
+		}
+		res.status(200).json({message:"Anulowano zamowienie poprawnie."});
+	} catch(err){
+		console.log(err);
+		res.status(500).json({ message: "Błąd w api anulowanie zamowienia, admin." });
+	}
+});
 
 
 
