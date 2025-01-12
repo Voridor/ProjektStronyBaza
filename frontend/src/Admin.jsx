@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Container, Button, Spinner, Table, Form, Tabs, Tab, Alert, Modal } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Container, Button, Spinner, Table, Form, Tabs, Tab, Alert, Modal, Accordion, Card } from 'react-bootstrap';
+import { Link, useNavigate } from 'react-router-dom';
 
 function Admin() {
     // trzeba sprawdzac czy uzytkownik to administrator, bo jak nie to ma nic nie widziec
@@ -622,8 +622,6 @@ const TopBuyersSection = () => {
         fetchTopka();
     },[]);
 
-
-
     return(
         <>
         {error ? <Alert variant="danger">{error}</Alert> : (
@@ -665,31 +663,171 @@ const TopBuyersSection = () => {
 };
 
 const ViewOrdersSection = () => {
+    // histora/lista zamowien dla admina
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [realiZamow, setRealiZamow] = useState([]); // realizowane zamowienia
+    const [zrealiZam, setZrealiZam] = useState([]); // zrealizowane juz zamowienia
+    const navigate=useNavigate();
+
+    useEffect(()=>{
+        const token=localStorage.getItem('token');
+        const fetchRealizowane=async()=>{
+            setLoading(true);
+            setError(null);
+            try{
+                const response=await fetch('http://localhost:5000/api/admin/realizamowienia', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    }
+                });
+                if(!response.ok){
+                    throw new Error('Błąd pobrania realizowanych zamówień.');
+                }
+                const data=await response.json();
+                setRealiZamow(data);
+            } catch(error){
+                setError(error.message);
+            } finally{
+                setLoading(false);
+            }
+        };
+        
+        const fetchZrealizo=async()=>{
+            setLoading(true);
+            setError(null);
+            try{
+                const response=await fetch('http://localhost:5000/api/admin/zrealizam', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    }
+                });
+                if(!response.ok){
+                    throw new Error('Błąd pobrania realizowanych zamówień.');
+                }
+                const data=await response.json();
+                setZrealiZam(data);
+            } catch(error){
+                setError(error.message);
+            } finally{
+                setLoading(false);
+            }
+        }; 
+
+        fetchRealizowane();
+        fetchZrealizo();
+    },[]);
+
+
+    const oznaczZamZreal=async(orderId)=>{
+        const token=localStorage.getItem('token');
+        setLoading(true);
+        setError(null);
+        try{
+            const response=await fetch(`http://localhost:5000/api/admin/oznacz/zrealiz/${orderId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                }
+            });
+            if(!response.ok){
+                throw new Error('Błąd zmiany statusu zamówienia.');
+            }
+            navigate(0);
+        } catch(error){
+            setError(error.message);
+        } finally{
+            setLoading(false);
+        }
+    };
+
+
     return (
-        <div>
-        <h4>Podgląd zamówień</h4>
-        <Table striped bordered hover>
-            <thead>
-            <tr>
-                <th>#</th>
-                <th>Numer zamówienia</th>
-                <th>Data</th>
-                <th>Klient</th>
-                <th>Status</th>
-            </tr>
-            </thead>
-            <tbody>
-            {/* Przykładowe dane */}
-            <tr>
-                <td>1</td>
-                <td>ZAM123</td>
-                <td>2025-01-01</td>
-                <td>Jan Kowalski</td>
-                <td>W realizacji</td>
-            </tr>
-            </tbody>
-        </Table>
-        </div>
+        <>
+        {error && <Alert variant="danger">{error}</Alert>}
+        {loading ? (
+        <div className="text-center">
+            <Spinner animation="border" variant="primary"></Spinner>
+        </div>) : (
+        <>
+        <h4 className='text-center py-2'>Podgląd zamówień</h4>
+        <p className='fs-5'>Gdy produkty zostaną odebrane przez klienta. Zmień status na zrealizowane.</p>
+        {realiZamow.length > 0 ? (
+        <Accordion>
+            <Card>
+                <Accordion.Header>Realizowane zamówienia</Accordion.Header>
+                <Accordion.Body>
+                <Table striped bordered hover>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Imię i nazwisko</th>
+                            <th>Kwota zamówienia</th>
+                            <th>Data zamówienia</th>
+                            <th>Status</th>
+                            <th>Akcja</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {realiZamow.map((order, index)=>(
+                            <tr key={index}>
+                                <td>{index+1}</td>
+                                <td>{order.imie} {order.nazwisko}</td>
+                                <td>{order.subtotal_porabacie}</td>
+                                <td>{new Date(order.data_utworzenia).getUTCDate()}.{new Date(order.data_utworzenia).getUTCMonth()+1}.{new Date(order.data_utworzenia).getFullYear()}</td>
+                                <td>{order.status}</td>
+                                <td><Button variant="success" onClick={() => oznaczZamZreal(order._id)}>Oznacz jako zrealizowane </Button></td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </Table>
+                </Accordion.Body>
+            </Card>
+        </Accordion>
+        ) : (
+        <Alert variant="info">Brak zamówień ze statusem realizowane.</Alert>
+        )}
+
+
+        {zrealiZam.length > 0 ? (
+            <Accordion className='mt-3'>
+                <Card>
+                    <Accordion.Header>Zrealizowane zamówienia</Accordion.Header>
+                    <Accordion.Body>
+                    <Table striped bordered hover>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Imię i nazwisko</th>
+                                <th>Kwota zamówienia</th>
+                                <th>Data zamówienia</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {zrealiZam.map((order, index)=>(
+                                <tr key={index}>
+                                    <td>{index+1}</td>
+                                    <td>{order.imie} {order.nazwisko}</td>
+                                    <td>{order.subtotal_porabacie}</td>
+                                    <td>{new Date(order.data_utworzenia).getUTCDate()}.{new Date(order.data_utworzenia).getUTCMonth()+1}.{new Date(order.data_utworzenia).getFullYear()}</td>
+                                    <td>{order.status}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
+                    </Accordion.Body>
+                </Card>
+            </Accordion>
+            ) : (
+            <Alert variant="info" className='mt-3'>Brak zamówień ze statusem zrealizowane.</Alert>
+            )}
+
+
+        </>)}
+        </>
     );
 };
 

@@ -894,7 +894,119 @@ app.get('/api/admin/top-kupujacy', async (req, res) => {
 	  console.log(err);
 	  res.status(500).json({ message: "Błąd w api top listy kupujacych." });
 	}
-  });
+});
+
+
+// endpoint do pobierania realizowanych zamówień w panelu admina
+app.get('/api/admin/realizamowienia', authenticateToken, async(req, res)=>{
+	try{
+		const user = await User.findById(req.user.userId);
+		if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+		const orders=await Cart.aggregate([
+			{
+				$match: {
+					status: "realizowane"
+				}
+			},
+			{
+				$lookup: {
+					from: "users",
+					localField: "user_id",
+					foreignField: "_id",
+					as: "user_details"
+				}
+			},
+			{
+				$unwind: "$user_details"
+			},
+			{
+				$project: {
+					_id: 1, // chyba zostaje
+					imie: "$user_details.imie",
+					nazwisko: "$user_details.nazwisko",
+					subtotal_porabacie: { $sum: "$ksiazki.subtotal_porabacie" },
+					data_utworzenia: 1,
+					status: 1
+				}
+			},
+			{
+				$sort: { data_utworzenia: -1 }
+			}
+		]);
+		res.status(200).json(orders);
+	} catch(err){
+		console.log(err);
+		res.status(500).json({ message: "Błąd w api pobierania realizowanych zamowien w admin." });
+	}
+});
+
+
+// endpoint do pobierania już zrealizowanych zamówień w panelu admina
+app.get('/api/admin/zrealizam', authenticateToken, async(req, res)=>{
+	try{
+		const user = await User.findById(req.user.userId);
+		if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+		const orders=await Cart.aggregate([
+			{
+				$match: {
+					status: "zrealizowane"
+				}
+			},
+			{
+				$lookup: {
+					from: "users",
+					localField: "user_id",
+					foreignField: "_id",
+					as: "user_details"
+				}
+			},
+			{
+				$unwind: "$user_details"
+			},
+			{
+				$project: {
+					imie: "$user_details.imie",
+					nazwisko: "$user_details.nazwisko",
+					subtotal_porabacie: { $sum: "$ksiazki.subtotal_porabacie" },
+					data_utworzenia: 1,
+					status: 1
+				}
+			},
+			{
+				$sort: { data_utworzenia: -1 }
+			}
+		]);
+		res.status(200).json(orders);
+	} catch(err){
+		console.log(err);
+		res.status(500).json({ message: "Błąd w api pobierania realizowanych zamowien w admin." });
+	}
+});
+
+
+// endpoint do zmiany statusu zamowienia
+app.post('/api/admin/oznacz/zrealiz/:id', authenticateToken, async(req, res)=>{
+	try{
+		const user = await User.findById(req.user.userId);
+		if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+		const orderID=req.params.id;
+		await Cart.updateOne(
+			{
+				_id: orderID
+			},
+			{
+				$set: { status: "zrealizowane" }
+			}
+		);
+		res.status(200).json({message:"Udało się zmienic status zamowienia."});
+	} catch(err){
+		console.log(err);
+		res.status(500).json({ message: "Błąd w api zmiany statusu." });
+	}
+});
+
+
+
 
 
 // Uruchomienie serwera

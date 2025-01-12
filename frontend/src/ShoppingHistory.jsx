@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 // historia zakupow klienta
 function ShoppingHistory(){
-    const [realiZamow, setRealiZamow]=useState([]); // tablica na realizowane zamowienia
+    const [realiZamow, setRealiZamow]=useState([]); // tablica na zamowienia
     const [error, setError]=useState(null);
     const [loading, setLoading]=useState(false);
     const [isLoggedIn, setIsLoggedIn]=useState(false);
