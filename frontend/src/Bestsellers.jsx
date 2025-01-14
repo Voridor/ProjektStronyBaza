@@ -4,19 +4,6 @@ import { MyNavbar } from "./MyNavbar";
 import { BookCard } from "./BookCard";
 import { useEffect, useState } from "react";
 
-/*
-z tej tablic pobierano kiedys statycznie dane jak nie korzystano z bazy danych
-const books = [
-    { id: 1, title: 'Harry Potter i Kamień Filozoficzny', author: 'J. K. Rowling', price: '49.99', image: '/img/book.png' },
-    { id: 2, title: 'Harry Potter i Komnata Tajemnic', author: 'J. K. Rowling', price: '29.99', image: '/img/book.png' },
-    { id: 3, title: 'Hobbit, czyli tam i z powrotem', author: 'J.R.R. Tolkien', price: '39.99', image: '/img/book.png' },
-    { id: 4, title: 'Zbrodnia i Kara', author: 'Fiodor Dostojewski', price: '44.99', image: '/img/book.png' },
-    { id: 5, title: 'Zbrodnia i Kara', author: 'Fiodor Dostojewski', price: '44.99', image: '/img/book.png' },
-    { id: 6, title: 'Zbrodnia i Kara', author: 'Fiodor Dostojewski', price: '44.99', image: '/img/book.png' },
-    { id: 7, title: 'Zbrodnia i Kara', author: 'Fiodor Dostojewski', price: '44.99', image: '/img/book.png' },
-    { id: 8, title: 'Zbrodnia i Kara', author: 'Fiodor Dostojewski', price: '44.99', image: '/img/book.png' },
-];
-*/
 
 export function Bestsellers(){
     const [data, setData]=useState([]); // stan poczatkowy to pusty obiekt bo funkcja zwroci odpowiedz w formie obiektu
@@ -34,7 +21,7 @@ export function Bestsellers(){
             try{
                 const response=await fetch("http://localhost:5000/api/bestsellery"); // await wstrzymuje wykonywanie funkcji do momentu pobrania danych
                 if(!response.ok){ // gdy odpowiedz nie jest ok to wywalamy errora
-                    throw new Error("Błąd pobrania danych i tyle.");
+                    throw new Error("Błąd pobrania danych.");
                 }
                 const result=await response.json(); // konwertacja danych do obiketu JSON
                 setData(result);
@@ -71,28 +58,6 @@ export function Bestsellers(){
                     <BookCard book={book} />
                 </div>
                 ))}
-
-                {/* 
-                {data.map(book => (
-                <div className="m-2" key={book._id.toString()}>
-                    <div className="card" style={{ width: '18rem', height: '33rem' }}>
-                        <img src={book.okladka_adres} className="card-img-top image-fluid" alt={`Okładka książki ${book.tytul} `} />
-                        <div className="card-body text-center">
-                            <h5 className="card-title text-center">{book.tytul}</h5>
-                            <p className="card-text"><strong>Autor:</strong> {
-                                book.autorzy.map(autor => (autor.imie+" "+autor.nazwisko))
-                            }</p>
-                            <p className="card-text"><strong>Kategorie:</strong> {
-                            book.kategorie.map(kat => (kat+" "))
-                            }</p>
-                            <p className="card-text"><strong>Cena:</strong> {book.cena} zł</p>
-                            <button className="btn btn-primary">Dodaj do koszyka</button>
-                        </div>
-                    </div>
-                </div>
-                ))}
-                */}
-
 
             </Container>
         </div> : 

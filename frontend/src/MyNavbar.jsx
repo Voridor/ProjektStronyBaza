@@ -24,7 +24,6 @@ export function MyNavbar() {
                     if(response.status==200){
                         setIsAdministrator(true);
                     }
-                    // setIsAdministrator(true); byl error w tym przypadku w konsoli przegladarki
                 }
             } catch (error) {
                 console.error('Błąd sprawdzania czy admin:', error.message);
@@ -106,8 +105,6 @@ export function MyNavbar() {
         try {
             localStorage.removeItem('token');
             setIsLoggedIn(false);
-            // mozna dodac wyslanie zadania wylogowania do backendu
-            // np. await fetch('/logout', { method: 'POST' });
         } catch (error) {
             setError(error.message);
         }

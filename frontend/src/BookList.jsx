@@ -5,20 +5,6 @@ import { useEffect, useState } from 'react';
 // jest to wykorzystywane na stronie glownej HomePage.jsx
 // tutaj są pobierane z bazy danych ksiazki najnowsze, czyli nowosci w ofercie ksiegarni
 
-/*
-ta tablica byla potrzebna do statycznego pobierania z niej danych do wyswietlenie gdy jeszcze nie korzystano z bazy danych
-const books = [
-  { id: 1, title: 'Harry Potter i Kamień Filozoficzny', author: 'J. K. Rowling', price: '49.99', image: '/img/book.png' },
-  { id: 2, title: 'Harry Potter i Komnata Tajemnic', author: 'J. K. Rowling', price: '29.99', image: '/img/book.png' },
-  { id: 3, title: 'Hobbit, czyli tam i z powrotem', author: 'J.R.R. Tolkien', price: '39.99', image: '/img/book.png' },
-  { id: 4, title: 'Zbrodnia i Kara', author: 'Fiodor Dostojewski', price: '44.99', image: '/img/book.png' },
-  { id: 5, title: 'Zbrodnia i Kara', author: 'Fiodor Dostojewski', price: '44.99', image: '/img/book.png' },
-  { id: 6, title: 'Zbrodnia i Kara', author: 'Fiodor Dostojewski', price: '44.99', image: '/img/book.png' },
-  { id: 7, title: 'Zbrodnia i Kara', author: 'Fiodor Dostojewski', price: '44.99', image: '/img/book.png' },
-  { id: 8, title: 'Zbrodnia i Kara', author: 'Fiodor Dostojewski', price: '44.99', image: '/img/book.png' },
-];
-*/
-
 export function BookList() {
   const [books, setBooks]=useState([]);
   const [loading, setLoading]=useState(false);

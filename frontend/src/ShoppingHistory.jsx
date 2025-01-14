@@ -41,7 +41,7 @@ function ShoppingHistory(){
     },[]);
 
 
-    const [activeKey, setActiveKey] = useState(null); // to rozwijanych accordiconow
+    const [activeKey, setActiveKey] = useState(null); // do rozwijanych accordiconow
     const handleAccordionClick = (key) => {
         // Przełączanie aktywnego klucza (rozwiń lub zwijaj)
         setActiveKey(activeKey === key ? null : key);

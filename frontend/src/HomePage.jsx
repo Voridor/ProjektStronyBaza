@@ -1,6 +1,3 @@
-/*import './App.css' w main.jsx jest bootstrapowy css importowany, 
-wiec ten tutaj sie naklada dodatkowo*/
-//import {Navbar} from './Navbar.jsx'
 import { Carousel } from 'react-bootstrap';
 import {BookList} from './BookList.jsx'
 import { MyFooter } from './MyFooter.jsx'

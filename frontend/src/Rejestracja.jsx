@@ -52,7 +52,6 @@ export function Rejestracja() {
                 //throw new Error('Wystąpił błąd podczas rejestracji.');
             }
             setSuccessRegister(true);
-            // można dodac przekierowanie na strone główną
         } catch (error) {
             setError(error.message); // ustawienie błędu w przypadku niepowodzenia
         } finally {

@@ -3,13 +3,12 @@ import { Container, Button, Spinner, Table, Form, Tabs, Tab, Alert, Modal, Accor
 import { Link, useNavigate } from 'react-router-dom';
 
 function Admin() {
-    // trzeba sprawdzac czy uzytkownik to administrator, bo jak nie to ma nic nie widziec
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isAdministrator, setIsAdministrator] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // funkcja do sprawdzenia czy uzytkownik to admin, bo jak nie to nie powinien widziec tej strony
+    // funkcja do sprawdzenia czy uzytkownik to admin, bo jak nie to nie powinien widziec opcji admina
     const checkAdmin = async () => {
         const token = localStorage.getItem('token');
         if (token !== null) {
@@ -23,8 +22,6 @@ function Admin() {
                     if(response.status==200){
                         setIsAdministrator(true);
                     }
-                    // mozna zrobic, ze gdy nie admin to przekierowujemy na strone glowna
-                    // setIsAdministrator(true); byl error w tym przypadku w konsoli przegladarki
                 }
             } catch (error) {
                 setError(error.message);
@@ -74,7 +71,7 @@ function Admin() {
                 </Tabs>
             </Container>
             </>
-            ) : <h2>nie jestes adminem i przeniesienie na strone glowna</h2>) : <h2>Nie jestes zalogowany i nie masz dostepu.</h2>}
+            ) : <h2 className='text-center'>Nie masz dostępu do tej strony.</h2>) : <h2 className='text-center'>Nie jesteś zalogowany i nie masz dostępu.</h2>}
         </div>
         </>
     );

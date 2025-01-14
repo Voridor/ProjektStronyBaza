@@ -36,21 +36,3 @@ function App() {
 
 export default App
 
-/*
-<MyNavbar></MyNavbar>
-      <div className="container mt-5">
-        <h1 className='text-center'>Nowości:</h1>
-        <BookList/>
-      </div>
-      <MyFooter/>
-*/
-
-/*
-<div>
-  <Navbar />
-  <div className="container mt-5">
-    <h1>Nasza Księgarnia</h1>
-    <BookList />
-  </div>
-</div>
-*/
