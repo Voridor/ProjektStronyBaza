@@ -15,4 +15,4 @@
 2. **Wykonaj polecenie `mongorestore`**  
    Przywrócenie całej bazy danych:
    ```bash
-   mongorestore bookstore
+   .\mongorestore.exe -d bookstore bookstore
