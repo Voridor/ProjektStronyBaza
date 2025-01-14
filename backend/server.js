@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
@@ -167,24 +168,27 @@ app.get('/api/ksiazki-kategoria', async (req, res) => {
 
 
 // endpoint do logowania
-app.post('/api/login', async(req, res) => {
+app.post('/api/login', async (req, res) => {
 	const { username, password } = req.body;
 	try {
 		// Sprawdzamy, czy użytkownik istnieje
 		const user = await User.findOne({ login: username });
-		if (!user) return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+		if (!user) {
+			return res.status(404).json({ message: 'Użytkownik nie znaleziony' });
+		}
 
-		// Porównanie hasła (bez bcrypt, porównujemy jawne hasła)
-		if (user.haslo !== password) {
-		  return res.status(401).json({ message: 'Nieprawidłowe hasło' });
+		// Porównanie hasła za pomocą bcrypt
+		const isPasswordValid = await bcrypt.compare(password, user.haslo);
+		if (!isPasswordValid) {
+			return res.status(401).json({ message: 'Nieprawidłowe hasło' });
 		}
 
 		// Generowanie tokenu JWT
 		const token = jwt.sign({ userId: user._id }, 'trudny_klucz', { expiresIn: '1h' });
 		res.json({ token });
-  } catch (err){
-	  res.status(500).json({ message: 'Wystąpił błąd podczas logowania' });
-  }
+	} catch (err) {
+		res.status(500).json({ message: 'Wystąpił błąd podczas logowania' });
+	}
 });
 
 
@@ -194,16 +198,22 @@ app.post('/api/register', async (req, res) => {
 	try {
 		// Sprawdzamy, czy użytkownik już istnieje
 		const existingUser = await User.findOne({ login: username });
-		if (existingUser) return res.status(400).json({ message: 'Użytkownik o tym loginie już istnieje.' });
+		if (existingUser) {
+			return res.status(400).json({ message: 'Użytkownik o tym loginie już istnieje.' });
+		}
+
+		// Hashowanie hasła za pomocą bcrypt
+		const hashedPassword = await bcrypt.hash(password, 10); // 10 to liczba rund "salt"
 
 		// Tworzymy nowego użytkownika
 		const newUser = new User({
-			login: username, 
-			haslo: password,
+			login: username,
+			haslo: hashedPassword,
 			email: email,
 			imie: name,
-			nazwisko: surname
+			nazwisko: surname,
 		});
+
 		await newUser.save();
 
 		res.status(201).json({ message: 'Użytkownik został zarejestrowany.' });

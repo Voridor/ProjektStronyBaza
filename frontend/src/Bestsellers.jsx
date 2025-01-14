@@ -35,7 +35,6 @@ export function Bestsellers(){
         fetchData();
     },[]); // [] to pusta tablica zaleznosci
 
-
     return(
         <>
         <MyNavbar/>
