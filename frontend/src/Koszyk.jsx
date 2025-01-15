@@ -154,6 +154,10 @@ function Koszyk(){
                 }
             });
             if (!response.ok) {
+                if(response.status==400){
+                    const wiado=await response.json();
+                    throw new Error(wiado.message); // gdy nie ma takiej ilosci ksiazki jaka chcemy zamowic zwracamy wiadomosc z backendu, ze nie ma tyle ksiazek
+                }
                 throw new Error('Nie udało się złożyć zamówienia.');
             }
             const updatedCart = await response.json(); // Zaktualizowany koszyk

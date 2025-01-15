@@ -794,7 +794,7 @@ const ViewOrdersSection = () => {
                                 <td>{index+1}</td>
                                 <td>{order.imie} {order.nazwisko}</td>
                                 <td>{order.subtotal_porabacie}</td>
-                                <td>{new Date(order.data_utworzenia).getUTCDate()}.{new Date(order.data_utworzenia).getUTCMonth()+1}.{new Date(order.data_utworzenia).getFullYear()}</td>
+                                <td>{new Date(order.data_utworzenia).getDate()}.{new Date(order.data_utworzenia).getMonth()+1}.{new Date(order.data_utworzenia).getFullYear()}</td>
                                 <td>{order.status}</td>
                                 <td><Button variant="success" onClick={() => oznaczZamZreal(order._id)}>Oznacz jako zrealizowane </Button></td>
                                 <td><Button variant="danger" onClick={() => anulujZamow(order._id)}>Anuluj zamowienie</Button></td>

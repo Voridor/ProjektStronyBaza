@@ -94,7 +94,7 @@ export function BookCard({ book }) {
       <div className="card-body text-center">
         <h5 className="card-title text-center">{book.tytul}</h5>
         <p className="card-text mb-0"><strong>Autor:</strong> {
-          book.autorzy.map(autor => (autor.imie+" "+autor.nazwisko))
+          book.autorzy.map(autor => (autor.imie+" "+autor.nazwisko+" "))
         }</p>
         <p className="card-text mb-0" style={{maxHeight: '4rem', overflow: 'auto'}}><strong>Kategorie:</strong> {
           book.kategorie.map(kat => (kat+" "))
