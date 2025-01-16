@@ -3,8 +3,6 @@ import { Container, Button, Alert, Spinner, Table, Image, Modal } from 'react-bo
 import { Link, useNavigate } from 'react-router-dom';
 
 
-// filozofia jest taka, że każdy użytkownik ma tylko jeden koszyk (o statusie otwartym) w bazie danych i tam w tabeli sa przechowywane ksiazki
-
 function Koszyk(){
     const [cart, setCart] = useState([]);
     const [error, setError] = useState(null);

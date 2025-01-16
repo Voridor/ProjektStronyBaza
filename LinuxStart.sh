@@ -1,0 +1,2 @@
+gnome-terminal --tab --title="frontend" -- "sudo /home/voridor/Dokumenty/GitHub/ProjektStronyBaza/frontend/LinuxStart.sh"
+gnome-terminal --tab --title="backend" -- "sudo /home/voridor/Dokumenty/GitHub/ProjektStronyBaza/backend/LinuxStart.sh"

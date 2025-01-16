@@ -64,7 +64,7 @@ export function Rejestracja() {
     <div className='bg-dark text-white'>
         <Container className="justify-content-center align-items-center py-5 w-25" style={{minHeight: '100vh'}}>
             <h1 className="text-center mb-3">Rejestracja</h1>
-            {/* gdy blad istnieje to renderujemy alert, jak go nie ma to nic nie robimy, bo po co */}
+            {/* gdy blad istnieje to renderujemy alert, jak go nie ma to nic nie robimy*/}
             {error ? <Alert variant="danger" dismissible>{error}</Alert> : null}
             {/* gdy poprawnie zalogowano to renderujemy alert, ktory o tym informuje */}
             {successRegister ? <Alert variant="success" dismissible>Utworzono konto.</Alert> : null}

@@ -85,13 +85,6 @@ app.get('/api/ksiazki-tytul', async (req, res) => {
     const books = await Book.find({
       tytul: { $regex: tytul, $options: 'i' } // $options: 'i' oznacza ignorowanie wielkości liter
     });
-	
-	/*
-	to nie ma raczej sensu bo w frontendzie jak jest tablica o dlugosc zero to wyswietlamy komunikat o braku wynikow
-    if (books.length === 0) {
-      return res.status(404).json({ message: 'Nie znaleziono książek o tym tytule' });
-    }
-	*/
 
     // Zwracamy znalezione książki
     res.json(books);
@@ -123,13 +116,6 @@ app.get('/api/ksiazki-autor', async (req, res) => {
 			}
 		}
     });
-
-	/*
-	to nie ma raczej sensu bo w frontendzie jak jest tablica o dlugosc zero to wyswietlamy komunikat o braku wynikow
-    if (books.length === 0) { // nie ma nikogo o takim nazwisku lub imieniu
-      return res.status(404).json({ message: 'Nie znaleziono książek dla podanego autora' });
-    }
-	*/
 	
     // Zwracamy znalezione książki
     res.json(books);
@@ -151,13 +137,6 @@ app.get('/api/ksiazki-kategoria', async (req, res) => {
     const books = await Book.find({
 		kategorie: { $regex: kategoria, $options: 'i' } // szuka bez względu na wielkość liter
     });
-	
-	/*
-	to nie ma raczej sensu bo w frontendzie jak jest tablica o dlugosc zero to wyswietlamy komunikat o braku wynikow
-    if (books.length === 0) { // nie ma książek o tej kategorii
-      return res.status(404).json({ message: 'Nie znaleziono książek o podanej kategorii' });
-    }
-	*/
 	
     // Zwracamy znalezione książki
     res.json(books);
@@ -184,7 +163,7 @@ app.post('/api/login', async (req, res) => {
 		}
 
 		// Generowanie tokenu JWT
-		const token = jwt.sign({ userId: user._id }, 'trudny_klucz', { expiresIn: '1h' });
+		const token = jwt.sign({ userId: user._id }, 'trudny_klucz', { expiresIn: '24h' });
 		res.json({ token });
 	} catch (err) {
 		res.status(500).json({ message: 'Wystąpił błąd podczas logowania' });
@@ -474,66 +453,6 @@ app.patch('/api/cart/zwieksz-book/:bookID', authenticateToken, async(req, res) =
 	}
 });
 
-
-
-
-
-
-
-// endpoint do zamawiania, czyli zmieniemay stan koszyka na zamkniety i dodajemy informacje
-// o zamowieniu do kolekcji books (wewnątrz kolekcji tablica zamowienia)
-/*
-app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
-  const session = await mongoose.startSession(); // Rozpoczęcie sesji MongoDB
-  session.startTransaction(); // Rozpoczęcie transakcji
-  try {
-	const user = await User.findById(req.user.userId);
-	if (!user){
-		throw new Error('Użytkownik nie znaleziony');
-	}
-	// sprawdzenie czy koszyk użytkownika istnieje i czy jest otwarty
-    let cart = await Cart.findOne({ user_id: user._id, status: "otwarty" });
-    if(!cart){
-		throw new Error('Otwarty koszyk nie został znaleziony');
-    }
-	
-	for(const item of cart.ksiazki){
-		const {book_id, ilosc, subtotal}=item;
-		//trzeba poszukac ksiazki w kolekcji books
-		const book=await Book.findById(book_id);
-		if(!book){
-			throw new Error(`Książka o ID ${book_id} nie została znaleziona w bazie.`);
-		}
-		// sprawdzanie czy w magazynie jest wystarczaja liczba ksiazek do realizacji zamowienia
-		if(book.ilosc<ilosc){
-			throw new Error(`Brak wystarczającej ilości egzemplarzy książki "${book.tytul}". Dostępne: ${book.ilosc}, zamówione: ${ilosc}.`);
-		}
-		// dodajemy szczegoly zamowienia do pola zamowienia w ksiazce
-		book.zamowienia.push({
-			ilosc: ilosc,
-			data_zamowienia: new Date(),
-			kwota_zamowienia: subtotal,
-			user_id: user._id
-		});
-		// zmiejszenie ilosci dostepnych książek
-		book.ilosc-=ilosc;
-		// zapisujemy zmiany
-		//await book.save();
-		await book.save({session});
-	}
-	
-	await Cart.updateOne({_id: cart._id}, {$set: {status:"zamkniety"}}, {session});
-	await session.commitTransaction(); // zatwierdzenie transakcji
-	session.endSession();
-	res.status(200).json({ message: 'Zamowiono ksiazki.' });
-  } catch (err) {
-	await session.abortTransaction();
-	session.endSession();
-	console.log(err);
-    res.status(500).json({ message: "Nie udało się zamowic ksiazek, ktore sa w koszyku." });
-  }
-});
-*/
 app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
@@ -557,7 +476,6 @@ app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
         });
       }
     }
-
 
 	// wyznaczenie rabatu, aby go potem odbic z cen ksiazek
 	let rabat = await User.aggregate([
