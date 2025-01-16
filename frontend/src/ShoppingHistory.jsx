@@ -68,7 +68,7 @@ function ShoppingHistory(){
                         {realiZamow.map((item, index)=>{
                             return(
                                 <Accordion.Item key={item._id} eventKey={String(index)} onClick={() => handleAccordionClick(String(index))}>
-                                    <Accordion.Header>Data złożenia zamówienia: {new Date(item.data_utworzenia).getDate()}.{new Date(item.data_utworzenia).getMonth()+1}.{new Date(item.data_utworzenia).getFullYear()} {new Date(item.data_utworzenia).getHours()}:{new Date(item.data_utworzenia).getMinutes()} Status zamówienia: {item.status}</Accordion.Header>
+                                    <Accordion.Header>Data złożenia zamówienia: {new Date(item.data_zakupu).getDate()}.{new Date(item.data_zakupu).getMonth()+1}.{new Date(item.data_zakupu).getFullYear()} {new Date(item.data_zakupu).getHours()}:{new Date(item.data_zakupu).getMinutes()} Status zamówienia: {item.status}</Accordion.Header>
                                     <Accordion.Body>
                                     <Table striped bordered hover>
                                         <thead>

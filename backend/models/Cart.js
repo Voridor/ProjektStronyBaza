@@ -13,7 +13,8 @@ const cartSchema = new mongoose.Schema({
 		subtotal_porabacie: { type: Number }
 	}],
 	data_utworzenia: { type: Date },
-	status: { type: String }
+	status: { type: String },
+	data_zakupu: { type: Date }
 },{
 	versionKey: false
 });

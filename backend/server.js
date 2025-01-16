@@ -558,7 +558,7 @@ app.post('/api/cart-zamow', authenticateToken, async (req, res) => {
 		}
 	  );
     }
-    await Cart.updateOne({_id: cart._id },{$set: {status: "realizowane"}});
+    await Cart.updateOne({_id: cart._id },{$set: {status: "realizowane", data_zakupu: new Date()}});
     res.status(200).json({ message: 'Zamówienie zostało złożone pomyślnie.' });
   } catch (err) {
     console.error(err);
@@ -699,11 +699,12 @@ app.get('/api/client/realizowane-zamowienia', authenticateToken, async (req, res
 						}
 					},
 					suma_subtotal: {$sum: "$ksiazki.subtotal_porabacie"},
-					data_utworzenia: {$first: "$data_utworzenia"}
+					data_utworzenia: {$first: "$data_utworzenia"},
+					data_zakupu: {$first: "$data_zakupu"}
 				}
 			},
 			{
-				$sort: {data_utworzenia: -1} // sortowanie po dacie(najnowsze na poczatku)
+				$sort: {data_zakupu: -1} // sortowanie po dacie(najnowsze na poczatku)
 			},
 			{
 				$project: {
@@ -712,7 +713,8 @@ app.get('/api/client/realizowane-zamowienia', authenticateToken, async (req, res
 					ksiazki: 1,
 					status: 1,
 					suma_subtotal: 1,
-					data_utworzenia: 1
+					data_utworzenia: 1,
+					data_zakupu: 1
 				}
 			}
 		]);
@@ -858,11 +860,12 @@ app.get('/api/admin/realizamowienia', authenticateToken, async(req, res)=>{
 					nazwisko: "$user_details.nazwisko",
 					subtotal_porabacie: { $sum: "$ksiazki.subtotal_porabacie" },
 					data_utworzenia: 1,
-					status: 1
+					status: 1,
+					data_zakupu: 1
 				}
 			},
 			{
-				$sort: { data_utworzenia: -1 }
+				$sort: { data_zakupu: -1 }
 			}
 		]);
 		res.status(200).json(orders);
@@ -901,11 +904,12 @@ app.get('/api/admin/zrealizam', authenticateToken, async(req, res)=>{
 					nazwisko: "$user_details.nazwisko",
 					subtotal_porabacie: { $sum: "$ksiazki.subtotal_porabacie" },
 					data_utworzenia: 1,
-					status: 1
+					status: 1,
+					data_zakupu: 1
 				}
 			},
 			{
-				$sort: { data_utworzenia: -1 }
+				$sort: { data_zakupu: -1 }
 			}
 		]);
 		res.status(200).json(orders);
